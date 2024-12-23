@@ -84,3 +84,10 @@ export class InvalidBoundaryDirectionError extends Error {
         this.name = "InvalidBoundaryDirectionError";
     }
 }
+
+export class InvalidNodeTypeError extends Error {
+    constructor(node: Node) {
+        super(`Invalid node type ${node.nodeName}`);
+        this.name = "InvalidNodeTypeError";
+    }
+}

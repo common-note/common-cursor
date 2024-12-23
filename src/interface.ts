@@ -35,6 +35,7 @@ export interface EditorConfig {
     isRoot?: (node: Node) => boolean;
     onLeaveNode?: (anchor: Anchor) => void;
     onEnterNode?: (anchor: Anchor) => void;
+    cachedTokensize?: boolean;
 }
 
 

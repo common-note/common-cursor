@@ -38,8 +38,6 @@ export interface EditorConfig {
     cachedTokensize?: boolean;
 }
 
-
-
 /**
  * 
  * case1: caret in text node and not reach the boundary (getHorizontalNeighborCase1)
@@ -112,11 +110,6 @@ export interface EditorConfig {
  * parent.<prev|next>.case1: <prev|next> exists
  * parent.<prev|next>.case2: <prev|next> not exists
  *      anchor = parent.parentElementOffset
- * 
- * 
- * 
- * 
- * 
  * 
  */
 export interface LocationMixin {

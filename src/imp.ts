@@ -1,4 +1,4 @@
-import { InvalidAnchorError, InvalidBoundaryDirectionError, InvalidNodeTypeError } from "./errors";
+import { InvalidAnchorError, InvalidBoundaryDirectionError } from "./errors";
 import type { LocationMixin, EditorConfig, EditorRange, Anchor, NeighborPayload, BoundaryPayload } from "./interface";
 
 
@@ -29,10 +29,6 @@ export function isEmptyText(node: Node) {
 export function simpleIsTextSegment(anchor: Anchor, offset: number): boolean {
     return true;
 }
-
-// export function elementOffset(element: HTMLElement): number {
-
-// }
 
 export class Editor implements LocationMixin {
     config: EditorConfig;
@@ -444,12 +440,10 @@ export class Editor implements LocationMixin {
         let current = container;
         let size = 0;
         if (container instanceof Text) {
-            size += offset + 1;
+            size += offset;
             if (!current.parentElement) {
                 throw new Error("Can not get offset of this anchor");
             }
-            current = current.parentElement;
-            size += 1;
             console.debug(current.nodeName, size);
         } else if (container instanceof HTMLElement) {
             for (let i = offset - 1; i >= 0; i--) {
@@ -493,6 +487,9 @@ export class Editor implements LocationMixin {
         return size - 1;
     }
 
+    _refreshNodeTokensize(node: Node): void {
+        throw new Error("Method not implemented.")
+    }
 
     getNextLocation(neighborPayload: NeighborPayload): Anchor {
         throw new Error("Method not implemented.");

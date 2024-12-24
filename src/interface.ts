@@ -29,7 +29,7 @@ export const register = (html: HTMLElement) => {
 }
 
 
-export interface EditorConfig {
+export interface LocConfig {
     shouldIgnore?: (node: Node) => boolean;
     isTextSegment?: (anchor: Anchor, offset: number) => boolean;
     isRoot?: (node: Node) => boolean;
@@ -112,7 +112,7 @@ export interface EditorConfig {
  *      anchor = parent.parentElementOffset
  * 
  */
-export interface LocationMixin {
+export interface AnchorInterface {
     getLocation(): EditorRange;
     /**
      * 
@@ -160,12 +160,6 @@ export interface LocationMixin {
      */
     _getHorizontalNeighborCase3(neighborPayload: NeighborPayload): Anchor | null;
 
-    getNextLocation(neighborPayload: NeighborPayload): Anchor | null;
-    getPrevLocation(neighborPayload: NeighborPayload): Anchor | null;
-    getUpLocation(neighborPayload: NeighborPayload): Anchor | null;
-    getDownLocation(neighborPayload: NeighborPayload): Anchor | null;
-    getLeftLocation(neighborPayload: NeighborPayload): Anchor | null;
-    getRightLocation(neighborPayload: NeighborPayload): Anchor | null;
-
-    // setLocation(location: Location): void;
+    getHorizontalAnchor(neighborPayload: NeighborPayload): Anchor | null;
+    getVerticalAnchor(neighborPayload: NeighborPayload): Anchor | null;
 }

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -19,29 +19,30 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Not needed if lastUpdated is not enabled
-      - uses: pnpm/action-setup@v3 # pnpm is optional but recommended, you can also use npm / yarn
+      - uses: pnpm/action-setup@v3 # pnpm is optional but recommended, you can also use npm / pnpm
         with:
           version: 8
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: yarn
+          node-version: 22
+          cache: pnpm
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Install Dependencies
         run: |
           cd document
-          yarn install
+          pnpm install
       - name: Build
         run: |
           cd document
-          yarn build
+          mkdir -p dist
+          pnpm build
       - name: Upload artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: document/doc_build
+          path: document/dist
 
   deploy:
 

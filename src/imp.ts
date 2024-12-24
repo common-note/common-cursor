@@ -1,5 +1,5 @@
 import { InvalidAnchorError, InvalidBoundaryDirectionError } from "./errors";
-import type { LocationMixin, EditorConfig, EditorRange, Anchor, NeighborPayload, BoundaryPayload } from "./interface";
+import type { AnchorInterface, LocConfig, EditorRange, Anchor, NeighborPayload, BoundaryPayload } from "./interface";
 
 
 export function editableRange(range: Range): EditorRange {
@@ -30,15 +30,14 @@ export function simpleIsTextSegment(anchor: Anchor, offset: number): boolean {
     return true;
 }
 
-export class Editor implements LocationMixin {
-    config: EditorConfig;
+export class AnchorQuery implements AnchorInterface {
+    config: LocConfig;
     root: Element;
-    constructor(config: EditorConfig, root: HTMLElement) {
+    constructor(config: LocConfig, root: HTMLElement) {
         this.config = config;
         this.root = root;
         this._textPlaceholder = document.createTextNode("");
     }
-
     // only return empty text node
     private _textPlaceholder: Text;
     public get textPlaceholder(): Text {
@@ -512,5 +511,99 @@ export class Editor implements LocationMixin {
     getLocation(): EditorRange {
         throw new Error("Method not implemented.");
     }
+    getHorizontalAnchor(neighborPayload: NeighborPayload): Anchor | null {
+        return this._getHorizontalNeighbor(neighborPayload);
+    }
+    getVerticalAnchor(neighborPayload: NeighborPayload): Anchor | null {
+        // return this._getVerticalNeighbor(neighborPayload);
+        throw new Error("not implemented");
+    }
+
 }
 
+
+export class LocEditor extends AnchorQuery {
+    lastMoveDirection: "left" | "right" | "up" | "down" | "none" = "none";
+    lastMoveAnchor: "start" | "end" | "none" = "none";
+    // constructor(config: LocConfig, root: HTMLElement) {
+    //     super(config, root);
+    // }
+
+
+    setAnchor(anchor: Anchor): boolean {
+        const selection = document.getSelection();
+        if (selection) {
+            selection.setPosition(anchor.container, anchor.offset);
+            this.lastMoveDirection = "none";
+            this.lastMoveAnchor = "none";
+            return true;
+        }
+        return false;
+    }
+    setStartAnchor(anchor: Anchor): boolean {
+        const range = document.getSelection()?.getRangeAt(0);
+        if (range) {
+            range.setStart(anchor.container, anchor.offset);
+            this.lastMoveDirection = "none";
+            this.lastMoveAnchor = "start";
+            return true;
+        }
+        return false;
+    }
+    setEndAnchor(anchor: Anchor): boolean {
+        const range = document.getSelection()?.getRangeAt(0);
+        if (range) {
+            range.setEnd(anchor.container, anchor.offset);
+            this.lastMoveDirection = "none";
+            this.lastMoveAnchor = "end";
+            return true;
+        }
+        return false;
+    }
+
+    setRange(start: Anchor, end: Anchor): boolean {
+        const range = document.getSelection()?.getRangeAt(0);
+        if (range) {
+            range.setStart(start.container, start.offset);
+            range.setEnd(end.container, end.offset);
+            this.lastMoveDirection = "none";
+            this.lastMoveAnchor = "none";
+            return true;
+        }
+        return false;
+    }
+
+    setEndAnchorTo(direction: "left" | "right"): boolean {
+        const range = document.getSelection()?.getRangeAt(0);
+        if (range) {
+            const next = this.getHorizontalAnchor({
+                anchor: { container: range.endContainer, offset: range.endOffset },
+                direction: direction
+            });
+            if (next) {
+                this.setEndAnchor(next);
+                this.lastMoveDirection = direction;
+                this.lastMoveAnchor = "end";
+                return true;
+            }
+        }
+        return false;
+    }
+
+    setStartAnchorTo(direction: "left" | "right"): boolean {
+        const range = document.getSelection()?.getRangeAt(0);
+        if (range) {
+            const prev = this.getHorizontalAnchor({
+                anchor: { container: range.startContainer, offset: range.startOffset },
+                direction: direction
+            });
+            if (prev) {
+                this.setStartAnchor(prev);
+                this.lastMoveDirection = direction;
+                this.lastMoveAnchor = "start";
+                return true;
+            }
+        }
+        return false;
+    }
+}

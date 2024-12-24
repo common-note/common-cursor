@@ -6,6 +6,7 @@ export default defineConfig({
   title: 'My Site',
   icon: '/rspress-icon.png',
   base: '/mds-cursor/',
+  outDir: 'dist', // 改用其他目录名称
   route: {
     exclude: ['custom.tsx', 'components/**/*'],
   },

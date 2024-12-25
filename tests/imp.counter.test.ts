@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { Editor } from "../src/imp"
+import { AnchorEditor } from "../src/imp"
 
 import { beforeEach } from 'vitest'
 beforeEach((ctx) => {
@@ -24,7 +24,7 @@ test("nodeTokensize/case1", () => {
     const container = document.createElement("div");
     container.textContent = "hello";
 
-    const editor = new Editor(
+    const editor = new AnchorEditor(
         {
             shouldIgnore: () => false,
         },
@@ -32,21 +32,21 @@ test("nodeTokensize/case1", () => {
     )
 
 
-    expect(editor._nodeTokensize(container)).toEqual(7);
+    expect(editor.nodeTokensize(container)).toEqual(7);
 })
 
 test("nodeTokensize/case2", () => {
     const container = document.createElement("div");
     container.innerHTML = "<b>hello</b><b>world</b>";
 
-    const editor = new Editor(
+    const editor = new AnchorEditor(
         {
             shouldIgnore: () => false,
         },
         container,
     )
 
-    expect(editor._nodeTokensize(container)).toEqual(16);
+    expect(editor.nodeTokensize(container)).toEqual(16);
 })
 
 test("nodeTokensize/case3", () => {
@@ -54,14 +54,14 @@ test("nodeTokensize/case3", () => {
     const container = document.createElement("div");
     container.innerHTML = "<b>hello</b><img/><b>world</b>";
 
-    const editor = new Editor(
+    const editor = new AnchorEditor(
         {
             shouldIgnore: () => false,
         },
         container,
     )
 
-    expect(editor._nodeTokensize(container)).toEqual(17);
+    expect(editor.nodeTokensize(container)).toEqual(17);
 })
 
 test("nodeTokensize/case4", () => {
@@ -69,14 +69,14 @@ test("nodeTokensize/case4", () => {
     const container = document.createElement("div");
     container.innerHTML = "<img/>";
 
-    const editor = new Editor(
+    const editor = new AnchorEditor(
         {
             shouldIgnore: () => false,
         },
         container,
     )
 
-    expect(editor._nodeTokensize(container)).toEqual(3);
+    expect(editor.nodeTokensize(container)).toEqual(3);
 })
 
 
@@ -84,22 +84,22 @@ test("getOffsetByAnchor/case1", () => {
     const container = document.createElement("div");
     container.innerHTML = "<b>hello</b><b>world</b>";
 
-    const editor = new Editor(
+    const editor = new AnchorEditor(
         {
             shouldIgnore: () => false,
         },
         container,
     )
 
-    expect(editor._getOffsetByAnchor({
+    expect(editor.getOffsetByAnchor({
         container: container,
         offset: 0,
     })).toEqual(0);
-    expect(editor._getOffsetByAnchor({
+    expect(editor.getOffsetByAnchor({
         container: container,
         offset: 1,
     })).toEqual(7);
-    expect(editor._getOffsetByAnchor({
+    expect(editor.getOffsetByAnchor({
         container: container,
         offset: 2,
     })).toEqual(14);
@@ -110,7 +110,7 @@ test("getOffsetByAnchor/case-has-ignore-1", () => {
     const container = document.createElement("div");
     container.innerHTML = "<b>hel<i>ignore</i>lo</b><b>world</b>";
 
-    const editor = new Editor(
+    const editor = new AnchorEditor(
         {
             shouldIgnore: (node) => {
                 if (node instanceof HTMLElement) {
@@ -124,15 +124,15 @@ test("getOffsetByAnchor/case-has-ignore-1", () => {
         container,
     )
 
-    expect(editor._getOffsetByAnchor({
+    expect(editor.getOffsetByAnchor({
         container: container,
         offset: 0,
     })).toEqual(0);
-    expect(editor._getOffsetByAnchor({
+    expect(editor.getOffsetByAnchor({
         container: container,
         offset: 1,
     })).toEqual(7);
-    expect(editor._getOffsetByAnchor({
+    expect(editor.getOffsetByAnchor({
         container: container,
         offset: 2,
     })).toEqual(14);
@@ -143,7 +143,7 @@ test("getOffsetByAnchor/case-has-ignore-2", () => {
     const container = document.createElement("div");
     container.innerHTML = "<b>hel<!--  -->lo</b><!--  --><b>world</b>";
 
-    const editor = new Editor(
+    const editor = new AnchorEditor(
         {
             shouldIgnore: (node) => {
                 if (node instanceof HTMLElement) {
@@ -157,15 +157,15 @@ test("getOffsetByAnchor/case-has-ignore-2", () => {
         container,
     )
 
-    expect(editor._getOffsetByAnchor({
+    expect(editor.getOffsetByAnchor({
         container: container,
         offset: 0,
     })).toEqual(0);
-    expect(editor._getOffsetByAnchor({
+    expect(editor.getOffsetByAnchor({
         container: container,
         offset: 1,
     })).toEqual(7);
-    expect(editor._getOffsetByAnchor({
+    expect(editor.getOffsetByAnchor({
         container: container,
         offset: 3,
     })).toEqual(14);
@@ -176,7 +176,7 @@ test("getAnchorByOffset/case-has-ignore-2", () => {
     const container = document.createElement("div");
     container.innerHTML = "<b>hello</b><b>world</b>";
 
-    const editor = new Editor(
+    const editor = new AnchorEditor(
         {
             shouldIgnore: (node) => {
                 if (node instanceof HTMLElement) {
@@ -190,31 +190,31 @@ test("getAnchorByOffset/case-has-ignore-2", () => {
         container,
     )
 
-    expect(editor._getAnchorByOffset(0)).toEqual({
+    expect(editor.getAnchorByOffset(0)).toEqual({
         container: container,
         offset: 0,
     });
-    expect(editor._getAnchorByOffset(1)).toEqual({
+    expect(editor.getAnchorByOffset(1)).toEqual({
         container: container.childNodes[0],
         offset: 0,
     });
-    expect(editor._getAnchorByOffset(2)).toEqual({
+    expect(editor.getAnchorByOffset(2)).toEqual({
         container: container.childNodes[0].childNodes[0],
         offset: 1,
     });
-    expect(editor._getAnchorByOffset(7)).toEqual({
+    expect(editor.getAnchorByOffset(7)).toEqual({
         container: container,
         offset: 1,
     });
-    expect(editor._getAnchorByOffset(12)).toEqual({
+    expect(editor.getAnchorByOffset(12)).toEqual({
         container: container.childNodes[1].childNodes[0],
         offset: 4,
     });
-    expect(editor._getAnchorByOffset(13)).toEqual({
+    expect(editor.getAnchorByOffset(13)).toEqual({
         container: container.childNodes[1],
         offset: 1,
     });
-    expect(editor._getAnchorByOffset(14)).toEqual({
+    expect(editor.getAnchorByOffset(14)).toEqual({
         container: container,
         offset: 2,
     });

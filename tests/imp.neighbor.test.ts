@@ -1,12 +1,13 @@
 import { expect, test } from 'vitest';
-import { anchorToStrong, InvalidAnchorError } from "../src/errors"
+import { InvalidAnchorError } from "../src/errors"
+import { anchorToStrong } from "../src/helper"
 
-import { Editor } from "../src/imp"
+import { AnchorQuery } from "../src/imp"
 test("horizontalNeighbor/case1", () => {
     const container = document.createElement("div");
     container.textContent = "hello world";
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
             shouldIgnore: () => false,
         },
@@ -46,7 +47,7 @@ test("horizontalNeighbor/case1", () => {
     } catch (e) {
         expect(e).toBeInstanceOf(InvalidAnchorError)
     }
-    
+
     try {
         editor._getHorizontalNeighborCase1({
             anchor: {
@@ -66,7 +67,7 @@ test("horizontalNeighbor/case2.1", () => {
     container.appendChild(document.createTextNode("hello"));
     container.appendChild(document.createTextNode("world"));
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
         },
         container,
@@ -98,7 +99,7 @@ test("horizontalNeighbor/case2.1", () => {
 
 test("horizontalNeighbor/case2.2", () => {
     const container = document.createElement("div");
-    
+
     const span1 = document.createElement("span");
     span1.textContent = "left-span";
     container.appendChild(span1);
@@ -107,7 +108,7 @@ test("horizontalNeighbor/case2.2", () => {
     span2.textContent = "right-span";
     container.appendChild(span2);
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
         },
         container,
@@ -163,12 +164,12 @@ test("horizontalNeighbor/case2.2", () => {
 
 test("horizontalNeighbor/case2.3-1", () => {
     const container = document.createElement("div");
-    
+
     const p1 = document.createElement("p");
     p1.textContent = "hello";
     container.appendChild(p1);
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
         },
         container,
@@ -195,7 +196,7 @@ test("horizontalNeighbor/case2.3-1", () => {
 
 test("horizontalNeighbor/case2.3-2", () => {
     const container = document.createElement("div");
-    
+
     const p1 = document.createElement("p");
     p1.textContent = "hello";
     const text1 = document.createTextNode("hello");
@@ -204,7 +205,7 @@ test("horizontalNeighbor/case2.3-2", () => {
     const text2 = document.createTextNode("world");
     container.appendChild(text2);
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
         },
         container,
@@ -243,7 +244,7 @@ test("horizontalNeighbor/case3.1", () => {
     b1.textContent = "hello";
     p1.appendChild(b1);
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
         },
         container,
@@ -264,7 +265,7 @@ test("horizontalNeighbor/case3.1", () => {
         },
         direction: "left",
     }))).toEqual("<div>|<p>...</p></div>")
-    
+
 })
 
 test("horizontalNeighbor/case3.2", () => {
@@ -277,7 +278,7 @@ test("horizontalNeighbor/case3.2", () => {
     b2.textContent = "world";
     container.appendChild(b2);
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
         },
         container,
@@ -312,7 +313,7 @@ test("horizontalNeighbor/case3.3", () => {
     p1.appendChild(b1);
     p1.appendChild(text2);
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
         },
         container,
@@ -347,7 +348,7 @@ test("horizontalNeighbor/case2-with-ignore-1", () => {
     container.appendChild(document.createTextNode("hello"));
     const p1 = document.createElement("p");
     container.appendChild(p1);
-    
+
     const b1 = document.createElement("b");
     b1.textContent = "hello";
     const span = document.createElement("span");
@@ -358,7 +359,7 @@ test("horizontalNeighbor/case2-with-ignore-1", () => {
     p1.appendChild(span);
     p1.appendChild(i1);
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
             shouldIgnore: (node) => {
                 if (node instanceof HTMLElement && node.tagName === "SPAN") {
@@ -412,7 +413,7 @@ test("horizontalNeighbor/case2-with-ignore-2", () => {
     container.appendChild(document.createTextNode("hello"));
     const p1 = document.createElement("p");
     container.appendChild(p1);
-    
+
     const b1 = document.createElement("b");
     b1.textContent = "hello";
     const span = document.createElement("span");
@@ -426,7 +427,7 @@ test("horizontalNeighbor/case2-with-ignore-2", () => {
     p1.appendChild(span2);
     p1.appendChild(i1);
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
             shouldIgnore: (node) => {
                 if (node instanceof HTMLElement && node.tagName === "SPAN") {
@@ -498,7 +499,7 @@ test("horizontalNeighbor/case-in-root-boundary", () => {
     b1.textContent = "hello";
     p1.appendChild(b1);
 
-    const editor = new Editor(
+    const editor = new AnchorQuery(
         {
         },
         container,

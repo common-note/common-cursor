@@ -1,5 +1,15 @@
 import { InvalidAnchorError, InvalidBoundaryDirectionError } from "./errors";
-import type { AnchorInterface, LocConfig, EditorRange, Anchor, NeighborPayload, BoundaryPayload } from "./interface";
+import type { AnchorQueryInterface, EditorRange, Anchor, NeighborPayload, BoundaryPayload, AnchorEditorInterface } from "./interface";
+
+export interface LocConfig {
+    shouldIgnore?: (node: Node) => boolean;
+    isTextSegment?: (anchor: Anchor, offset: number) => boolean;
+    isRoot?: (node: Node) => boolean;
+    onLeaveNode?: (anchor: Anchor) => void;
+    onEnterNode?: (anchor: Anchor) => void;
+    cachedTokensize?: boolean;
+    parentQueryer?: AnchorQueryInterface;
+}
 
 
 export function editableRange(range: Range): EditorRange {
@@ -30,13 +40,21 @@ export function simpleIsTextSegment(anchor: Anchor, offset: number): boolean {
     return true;
 }
 
-export class AnchorQuery implements AnchorInterface {
+export class AnchorQuery implements AnchorQueryInterface {
     config: LocConfig;
     root: Element;
+    parentQueryer: AnchorQueryInterface | null = null;
+    subQueryer: AnchorQueryInterface | null = null;
     constructor(config: LocConfig, root: HTMLElement) {
         this.config = config;
         this.root = root;
         this._textPlaceholder = document.createTextNode("");
+        this.parentQueryer = config.parentQueryer || null;
+    }
+    
+    moveQueryer(imp: AnchorQueryInterface): void {
+        this.subQueryer = imp;
+        this.parentQueryer = imp.parentQueryer;
     }
     // only return empty text node
     private _textPlaceholder: Text;
@@ -173,7 +191,14 @@ export class AnchorQuery implements AnchorInterface {
         }
         throw new InvalidBoundaryDirectionError(container, direction);
     }
-
+    /**
+      * 
+      * case1: caret in text node and not reach the boundary (getHorizontalNeighborCase1)
+      *      hello | world     (right || left)
+      * 
+      * @param neighborPayload 
+      * @returns 
+      */
     _getHorizontalNeighborCase1({ anchor, direction }: NeighborPayload): Anchor {
         if (anchor.container.nodeType !== Node.TEXT_NODE) {
             throw new Error("Anchor is not a text node");
@@ -213,6 +238,23 @@ export class AnchorQuery implements AnchorInterface {
         throw new Error(`Invalid neighbor direction ${direction}`);
     }
 
+    /**
+ * 
+ * case2.1: caret in text node and reach the boundary and the boundary is a text node
+ *      hello world | hello world         (right || left)
+ *      <text segment>|<text segment>
+ * 
+ * case2.2: caret in text node and reach the boundary and the boundary is a html element
+ *      hello world |<p>hello world</p>   (right)
+ *      <p>hello world</p>|hello world    (left)
+ * 
+ * case2.3: caret in text node and reach the boundary and the node is at boundary
+ *      <p>hello world|</p>   (right)
+ *      <p>|hello world</p>   (left)
+ * 
+ * @param neighborPayload 
+ * @returns 
+ */
     _getHorizontalNeighborCase2(neighborPayload: NeighborPayload): Anchor | null {
         const { anchor, direction } = neighborPayload;
         const { container } = anchor;
@@ -234,35 +276,52 @@ export class AnchorQuery implements AnchorInterface {
             })
         }
 
-            // case 2.3
+        // case 2.3
         //    <p>hello world|</p>
         //  =><p>hello world</p>"|"
         const parent = container.parentElement;
         if (!parent || parent === this.root) {
-                return null;
-            }
-            const parentNeighborSibling = this._getNeighborSibling({
-                container: parent,
-                direction: direction
+            return null;
+        }
+        const parentNeighborSibling = this._getNeighborSibling({
+            container: parent,
+            direction: direction
+        })
+        if (parentNeighborSibling instanceof Text) {
+            return this._getBoundaryAnchor({
+                container: parentNeighborSibling,
+                direction: direction === "left" ? "right" : "left"
             })
-            if (parentNeighborSibling instanceof Text) {
-                return this._getBoundaryAnchor({
-                    container: parentNeighborSibling,
-                    direction: direction === "left" ? "right" : "left"
-                })
-            }
-            if (direction === "left") {
+        }
+        if (direction === "left") {
             parent.before(this.textPlaceholder);
-            } else {
+        } else {
             parent.after(this.textPlaceholder);
-            }
-            return {
+        }
+        return {
             container: this.textPlaceholder,
-                offset: 0,
+            offset: 0,
         }
 
     }
 
+    /**
+ * 
+ * case3: caret in html element
+ *  
+ * case3.1: caret in html element and the html element is at boundary
+ *      <div><p>...<b>hello</b>|<p>...</div>   (right)
+ *      <div>...<p>|<b>hello</b></p></div>   (left)
+ * 
+ * case3.2: caret in html element and the html element is not at boundary
+ *      <p>hello</p>|<p>world</p>  (left || right)
+ * 
+ * case3.3: caret in html element and the neighbor element is a text node
+ *      (normalize case1)
+ * 
+ * @param neighborPayload 
+ * @returns 
+ */
     _getHorizontalNeighborCase3({ anchor, direction }: NeighborPayload): Anchor | null {
         // do normalize then route to case1 or case2
         if (anchor.container.nodeType === Node.TEXT_NODE) {
@@ -282,17 +341,17 @@ export class AnchorQuery implements AnchorInterface {
                 direction: direction
             })
         }
-            if (container.childNodes[offset - 1] instanceof Text) {
+        if (container.childNodes[offset - 1] instanceof Text) {
             //    <p>hello|<any/></p> (p, 1)
             //   =<p>hello|<any/></p> (text`hello`, 5)
-                return this._getHorizontalNeighbor({
-                    anchor: this._getBoundaryAnchor({
-                        container: container.childNodes[offset - 1],
+            return this._getHorizontalNeighbor({
+                anchor: this._getBoundaryAnchor({
+                    container: container.childNodes[offset - 1],
                     direction: 'right'
-                    }),
-                    direction: direction
-                })
-            }
+                }),
+                direction: direction
+            })
+        }
 
         if (!container.childNodes[offset]) {
             //   <p><b></b>|</p>   (p, 1)
@@ -331,7 +390,7 @@ export class AnchorQuery implements AnchorInterface {
                 ret = this._getHorizontalNeighborCase2({ anchor, direction });
             } else {
                 ret = this._getHorizontalNeighborCase1({ anchor, direction });
-        }
+            }
 
         } else if (anchor.container instanceof HTMLElement) {
             ret = this._getHorizontalNeighborCase3({ anchor, direction });
@@ -365,7 +424,7 @@ export class AnchorQuery implements AnchorInterface {
             } else {
                 for (let i = 0; i < node.childNodes.length; i++) {
                     const child = node.childNodes[i];
-                    ret += this._nodeTokensize(child);
+                    ret += this.nodeTokensize(child);
                 }
                 console.debug(node.nodeName, ret + 2);
                 if (isSingleClosing(node)) {
@@ -379,6 +438,13 @@ export class AnchorQuery implements AnchorInterface {
             }
         }
         return ret;
+    }
+
+    nodeTokensize(node: Node): number {
+        if (this.subQueryer) {
+            return this.subQueryer.nodeTokensize(node);
+        }
+        return this._nodeTokensize(node);
     }
 
     _getAnchorByOffset(offset: number, base?: Anchor): Anchor {
@@ -408,7 +474,7 @@ export class AnchorQuery implements AnchorInterface {
                 if (this.shouldIgnore(child)) {
                     continue;
                 }
-                const childSize = this._nodeTokensize(child);
+                const childSize = this.nodeTokensize(child);
                 if (residual > childSize) {
                     residual -= childSize;
                 } else if (residual === childSize) {
@@ -418,12 +484,12 @@ export class AnchorQuery implements AnchorInterface {
                     }
                 } else if (residual < childSize) {
                     if (child instanceof Text) {
-                        return this._getAnchorByOffset(residual, {
+                        return this.getAnchorByOffset(residual, {
                             container: child,
                             offset: 0
                         })
                     }
-                    return this._getAnchorByOffset(residual - 1, {
+                    return this.getAnchorByOffset(residual - 1, {
                         container: child,
                         offset: 0
                     })
@@ -433,6 +499,12 @@ export class AnchorQuery implements AnchorInterface {
         }
 
         return current;
+    }
+    getAnchorByOffset(offset: number, base?: Anchor): Anchor {
+        if (this.subQueryer) {
+            return this.subQueryer.getAnchorByOffset(offset, base);
+        }
+        return this._getAnchorByOffset(offset, base);
     }
 
     _getOffsetByAnchor({ container, offset }: Anchor): number {
@@ -452,7 +524,7 @@ export class AnchorQuery implements AnchorInterface {
                 if (this.shouldIgnore(container.childNodes[i])) {
                     continue;
                 }
-                size += this._nodeTokensize(container.childNodes[i]);
+                size += this.nodeTokensize(container.childNodes[i]);
                 console.debug(container.childNodes[i].nodeName, size);
             }
             size += 1;
@@ -467,7 +539,7 @@ export class AnchorQuery implements AnchorInterface {
                 direction: "left"
             });
             while (currentSibling) {
-                size += this._nodeTokensize(currentSibling);
+                size += this.nodeTokensize(currentSibling);
                 console.debug(currentSibling.nodeName, size);
                 currentSibling = this._getNeighborSibling({
                     container: currentSibling,
@@ -485,36 +557,109 @@ export class AnchorQuery implements AnchorInterface {
         // last location is (root, childNodes.length)
         return size - 1;
     }
+    getOffsetByAnchor(anchor: Anchor): number {
+        if (this.subQueryer) {
+            return this.subQueryer.getOffsetByAnchor(anchor);
+        }
+        return this._getOffsetByAnchor(anchor);
+    }
 
     _refreshNodeTokensize(node: Node): void {
         throw new Error("Method not implemented.")
     }
 
-    getNextLocation(neighborPayload: NeighborPayload): Anchor {
-        throw new Error("Method not implemented.");
-    }
-    getPrevLocation(neighborPayload: NeighborPayload): Anchor {
-        throw new Error("Method not implemented.");
-    }
-    getUpLocation(neighborPayload: NeighborPayload): Anchor {
-        throw new Error("Method not implemented.");
-    }
-    getDownLocation(neighborPayload: NeighborPayload): Anchor {
-        throw new Error("Method not implemented.");
-    }
-    getLeftLocation(neighborPayload: NeighborPayload): Anchor {
-        throw new Error("Method not implemented.");
-    }
-    getRightLocation(neighborPayload: NeighborPayload): Anchor {
-        throw new Error("Method not implemented.");
-    }
-    getLocation(): EditorRange {
-        throw new Error("Method not implemented.");
-    }
+
+    /**
+     * 
+     * case1: caret in text node and not reach the boundary (getHorizontalNeighborCase1)
+     *      hello | world     (right || left) => neighborOffset
+     * 
+     * case2: caret in text node and reach the boundary (getHorizontalNeighborCase2)
+     *              container(Text)
+     *                  ↓
+     *      hello world | ... (right)
+     *      ... | hello world (left) 
+     * 
+     * case2.1: caret in text node and reach the boundary and the boundary is a text node
+     *      hello world | hello world         (right || left)
+     *          => next.firstAnchor 
+     *          => prev.lastAnchor 
+     *      <text segment>|<text segment>
+     * 
+     * case2.2: caret in text node and reach the boundary and the boundary is a html element
+     *      hello world |<p>hello world</p>   (right)
+     *              => next.firstAnchor
+     *      <p>hello world</p>|hello world    (left)
+     *              => prev.lastAnchor
+     * 
+     * case2.3: caret in text node and reach the boundary and the node is at boundary
+     *      <p>hello world|</p>   (right)
+     *              => {container.parent, parent(p).parentElementOffset + 1}
+     *      <p>|hello world</p>   (left)
+     *              => {container.parent, parent(p).parentElementOffset}
+     * 
+     * case3: caret in html element (getHorizontalCase3)
+     * 
+     * case3.1: caret in html element and the html element is at boundary
+     *        container(p)
+     *            ↓
+     *      <div><p>...<b>hello</b>|</p>...</div>   (right)
+     *                             ↑
+     *                    offset(childNodes.length-1)
+     *              => {container.parent, container.parentElementOffset + 1}
+     * 
+     *            container(p)
+     *                ↓
+     *      <div>...<p>|<b>hello</b>...</p></div>   (left)
+     *                 ↑
+     *             offset(0)
+     *              => {container.parent, container.parentElementOffset}
+     * 
+     * case3.2: caret in html element and the html element is not at boundary
+     *      <p>hello</p>|<p>world</p>  (left || right)
+     *              => next.firstAnchor
+     *              => prev.firstAnchor
+     * 
+     * case3.3: caret in html element and the neighbor element is a text node
+     *      (n.case1) => refunction
+     * 
+     * normalize: make anchor container change from html to text but keep cursor fixed in vision.
+     * 
+     * n.case1: 
+     *      caret in html element but child[offset] or child[offset - 1] is a text node
+     *  
+     * n.case2:
+     *      caret in html element but child[offset] and child[offset - 1] are both element node
+     * 
+     * get boundary Anchor
+     * 
+     * 
+     * <prev|next>.case1: <prev|next> exists
+     * <prev|next>.case2: <prev|next> not exists
+     *      anchor = parent.boundaryOffset
+     * 
+     * parent.<prev|next>.case1: <prev|next> exists
+     * parent.<prev|next>.case2: <prev|next> not exists
+     *      anchor = parent.parentElementOffset
+     * 
+     */
     getHorizontalAnchor(neighborPayload: NeighborPayload): Anchor | null {
-        return this._getHorizontalNeighbor(neighborPayload);
+        if (this.subQueryer) {
+            return this.subQueryer.getHorizontalAnchor(neighborPayload);
+        }
+        const anchor = this._getHorizontalNeighbor(neighborPayload);
+        if (anchor) {
+            return anchor;
+        }
+        if (this.parentQueryer) {
+            return this.parentQueryer.getHorizontalAnchor(neighborPayload);
+        }
+        return null;
     }
     getVerticalAnchor(neighborPayload: NeighborPayload): Anchor | null {
+        if (this.subQueryer) {
+            return this.subQueryer.getVerticalAnchor(neighborPayload);
+        }
         // return this._getVerticalNeighbor(neighborPayload);
         throw new Error("not implemented");
     }
@@ -522,7 +667,7 @@ export class AnchorQuery implements AnchorInterface {
 }
 
 
-export class LocEditor extends AnchorQuery {
+export class AnchorEditor extends AnchorQuery implements AnchorEditorInterface {
     lastMoveDirection: "left" | "right" | "up" | "down" | "none" = "none";
     lastMoveAnchor: "start" | "end" | "none" = "none";
     // constructor(config: LocConfig, root: HTMLElement) {

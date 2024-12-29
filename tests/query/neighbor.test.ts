@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
-import { anchorToStrong, findNode } from "../src/helper"
+import { anchorToStrong, findNode } from "../../src/helper"
 
-import { AnchorQuery, SimpleNeighborResult } from "../src/query"
+import { AnchorQuery, SimpleNeighborResult } from "../../src/query"
 
 function stringifySimpleNeighborResult(result: SimpleNeighborResult) {
     if (result.next) {
@@ -59,7 +59,7 @@ test("horizontalNeighbor/case1", () => {
             direction: "left",
             stride: "char",
         },
-    }).error?.message).toEqual(editor.messages.AT_TEXT_NODE_BOUNDARY)
+    }).error?.message).toEqual(editor.messages.QUERY_ERROR.AT_TEXT_NODE_BOUNDARY)
 
     expect(editor._getHorizontalNeighborCase1({
         anchor: {
@@ -70,7 +70,7 @@ test("horizontalNeighbor/case1", () => {
             direction: "right",
             stride: "char",
         },
-    }).error?.message).toEqual(editor.messages.AT_TEXT_NODE_BOUNDARY)
+    }).error?.message).toEqual(editor.messages.QUERY_ERROR.AT_TEXT_NODE_BOUNDARY)
 
 })
 

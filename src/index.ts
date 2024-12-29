@@ -8,5 +8,4 @@ export const squared = (n: number): number => n * n;
 // 上层应用是将对应的 selection 状态应用到 dom 中
 // 同时提供对 selection 的拷贝、粘贴、删除、撤销、重做等操作
 // 所有的操作应该都是数据驱动的，可以发射对应的 event json object 来进行操作。
-// 
-
+//

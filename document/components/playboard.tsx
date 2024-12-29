@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { AnchorQuery } from '../../src/query';
-import { AnchorEditor } from '../../src/editor';
-import { anchorToStrong } from '../../src/helper';
 // biome-ignore lint/style/useImportType: <explanation>
 import React from 'react';
+import { AnchorEditor } from '../../src/editor';
+import { anchorToStrong } from '../../src/helper';
+import { AnchorQuery } from '../../src/query';
 
 interface EditableDivProps {
   initialContent?: string;
@@ -143,7 +143,7 @@ export const EditablePlay: React.FC<EditableDivProps> = ({
               direction: 'right',
               stride: 'char',
             });
-            
+
             if (ret.error && intervalRef.current) {
               console.log('setStartAnchorTo failed');
               clearInterval(intervalRef.current);

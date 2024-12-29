@@ -1,5 +1,10 @@
 import type { Anchor } from "./interface";
 
+/**
+ * Convert Node to string
+ * @param node 
+ * @returns 
+ */
 export function NodeToString(node: Node): string {
     if (node instanceof Text) {
         return node.textContent || "";
@@ -10,6 +15,11 @@ export function NodeToString(node: Node): string {
     return "";
 }
 
+/**
+ * Convert Node to simple string
+ * @param node 
+ * @returns 
+ */
 export function simpleNodeRepr(node: Node): string {
     if (node instanceof Text) {
         if (node.textContent?.length === 0) {
@@ -22,7 +32,15 @@ export function simpleNodeRepr(node: Node): string {
         return `<${tag}>...</${tag}>`;
     }
     return `<${node.nodeName}/>`;
-} export function anchorToStrong(anchor: Anchor | null): string {
+} 
+
+
+/**
+ * Convert node to string, with anchor position marked as |
+ * @param anchor 
+ * @returns 
+ */
+export function anchorToStrong(anchor: Anchor | null): string {
     if (anchor === null) {
         return "";
     }
@@ -68,3 +86,22 @@ export function simpleNodeRepr(node: Node): string {
     return innerHTML;
 }
 
+/**
+ * find node with filter function
+ * @param node 
+ * @param filter 
+ * @returns 
+ */
+export function findNode<T extends Node>(node: Node, filter: (node: T) => boolean): T | null {
+    let curNode = node;
+    while (curNode) {
+        if (filter(curNode as T)) {
+            return curNode as T;
+        }
+        if (!curNode.parentElement) {
+            break;
+        }
+        curNode = curNode.parentElement;
+    }
+    return null;
+}

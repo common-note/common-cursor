@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { AnchorEditor } from "../src/imp"
+import { AnchorEditor } from "../src/editor"
 
 import { beforeEach } from 'vitest'
 beforeEach((ctx) => {

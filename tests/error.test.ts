@@ -1,6 +1,6 @@
 // test anchor and range text serialization is correct
 import { expect, test } from 'vitest';
-import { anchorToStrong } from "../src/errors";
+import { anchorToStrong } from "../src/helper";
 
 test("anchorToStrong1", () => {
     const anchor = {

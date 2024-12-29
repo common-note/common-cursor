@@ -1,14 +1,27 @@
-import { InvalidAnchorError, InvalidBoundaryDirectionError } from "./errors";
-import type { AnchorQueryInterface, EditorRange, Anchor, NeighborPayload, BoundaryPayload, AnchorEditorInterface } from "./interface";
+
+import type { AnchorQueryInterface, EditorRange, Anchor, NeighborPayload, NeighborResult, ContainerType, Step, Direction } from "./interface";
+import { I18N } from "./i18n";
+import type { MessageType } from "./i18n";
+import { InvalidBoundaryDirectionError, ErrorCode, type QueryError } from "./errors";
+
+interface BoundaryPayload {
+    container: ContainerType;
+    step: Step;
+}
+
+export interface SimpleNeighborResult {
+    next: Anchor | null;
+    error?: QueryError;
+}
 
 export interface LocConfig {
-    shouldIgnore?: (node: Node) => boolean;
-    isTextSegment?: (anchor: Anchor, offset: number) => boolean;
-    isRoot?: (node: Node) => boolean;
-    onLeaveNode?: (anchor: Anchor) => void;
-    onEnterNode?: (anchor: Anchor) => void;
+    language?: keyof typeof I18N;
+    shouldIgnore?: (node: Node, editor: AnchorQueryInterface) => boolean;
+    isTextSegment?: (anchor: Anchor, offset: number, editor: AnchorQueryInterface) => boolean;
+    isRoot?: (node: Node, editor: AnchorQueryInterface) => boolean;
     cachedTokensize?: boolean;
     parentQueryer?: AnchorQueryInterface;
+    onDefault?: (neighborPayload: NeighborPayload) => NeighborResult;
 }
 
 
@@ -40,21 +53,35 @@ export function simpleIsTextSegment(anchor: Anchor, offset: number): boolean {
     return true;
 }
 
+export function reverseDirection(direction: Direction): Direction {
+    if (direction === "left") {
+        return "right";
+    }
+    if (direction === "right") {
+        return "left";
+    }
+    throw new Error("Invalid direction");
+}
+
+export function reverseStep(step: Step): Step {
+    return {
+        direction: reverseDirection(step.direction),
+        stride: step.stride,
+    }
+}
+
+/**
+ * AnchorQuery is a unstateful class, it is a query interface for a specific node.
+ */
 export class AnchorQuery implements AnchorQueryInterface {
     config: LocConfig;
     root: Element;
-    parentQueryer: AnchorQueryInterface | null = null;
-    subQueryer: AnchorQueryInterface | null = null;
+    messages: MessageType;
     constructor(config: LocConfig, root: HTMLElement) {
         this.config = config;
         this.root = root;
         this._textPlaceholder = document.createTextNode("");
-        this.parentQueryer = config.parentQueryer || null;
-    }
-    
-    moveQueryer(imp: AnchorQueryInterface): void {
-        this.subQueryer = imp;
-        this.parentQueryer = imp.parentQueryer;
+        this.messages = I18N[config.language || "en"];
     }
     // only return empty text node
     private _textPlaceholder: Text;
@@ -69,7 +96,7 @@ export class AnchorQuery implements AnchorQueryInterface {
         if (!this.config.isTextSegment) {
             return true;
         }
-        return this.config.isTextSegment(anchor, offset);
+        return this.config.isTextSegment(anchor, offset, this);
     }
 
     shouldIgnore(node: Node) {
@@ -80,11 +107,24 @@ export class AnchorQuery implements AnchorQueryInterface {
         if (!this.config.shouldIgnore) {
             return false;
         }
-        return this.config.shouldIgnore(node);
+        return this.config.shouldIgnore(node, this);
     }
 
-    _getNeighborSibling({ container, direction }: BoundaryPayload): HTMLElement | Text | null {
-        const siblingIterfn = direction === "left" ? "previousSibling" : "nextSibling";
+    _makeError(code: ErrorCode, method: string, message: string,
+        context?: { [key: string]: unknown }): QueryError {
+        return {
+            code,
+            message,
+            location: {
+                clazz: this.constructor.name,
+                method: method
+            },
+            context: context
+        }
+    }
+
+    _getNeighborSibling({ container, step }: BoundaryPayload): HTMLElement | Text | null {
+        const siblingIterfn = step.direction === "left" ? "previousSibling" : "nextSibling";
         const currentSibling = container;
         let neighborSibling = currentSibling[siblingIterfn];
 
@@ -110,8 +150,8 @@ export class AnchorQuery implements AnchorQueryInterface {
     }
 
 
-    _getBoundaryAnchor({ container, direction }: BoundaryPayload): Anchor {
-        if (direction === 'left') {
+    _getBoundaryAnchor({ container, step }: BoundaryPayload): Anchor {
+        if (step.direction === 'left') {
             if (container instanceof Text) {
                 return {
                     container: container,
@@ -150,7 +190,7 @@ export class AnchorQuery implements AnchorQueryInterface {
             }
         }
 
-        if (direction === 'right') {
+        if (step.direction === 'right') {
             if (container instanceof Text) {
                 return {
                     container: container,
@@ -189,7 +229,7 @@ export class AnchorQuery implements AnchorQueryInterface {
                 }
             }
         }
-        throw new InvalidBoundaryDirectionError(container, direction);
+        throw new InvalidBoundaryDirectionError(container, step.direction);
     }
     /**
       * 
@@ -199,14 +239,20 @@ export class AnchorQuery implements AnchorQueryInterface {
       * @param neighborPayload 
       * @returns 
       */
-    _getHorizontalNeighborCase1({ anchor, direction }: NeighborPayload): Anchor {
+    _getHorizontalNeighborCase1({ anchor, step }: NeighborPayload): SimpleNeighborResult {
         if (anchor.container.nodeType !== Node.TEXT_NODE) {
-            throw new Error("Anchor is not a text node");
+            return {
+                next: null,
+                error: this._makeError(ErrorCode.INVALID_ANCHOR, "_getHorizontalNeighborCase1", this.messages.QUERY_ERROR.NOT_TEXT_NODE),
+            }
         }
-        if ((anchor.offset === 0 && direction === "left") || (anchor.offset === (anchor.container.textContent?.length || 0) && direction === "right")) {
-            throw new InvalidAnchorError(anchor);
+        if ((anchor.offset === 0 && step.direction === "left") || (anchor.offset === (anchor.container.textContent?.length || 0) && step.direction === "right")) {
+            return {
+                next: null,
+                error: this._makeError(ErrorCode.AT_BOUNDARY, "_getHorizontalNeighborCase1", this.messages.QUERY_ERROR.AT_TEXT_NODE_BOUNDARY),
+            }
         }
-        if (direction === "left") {
+        if (step.direction === "left") {
             let offset = anchor.offset - 1;
             while (offset > 0) {
                 if (this.isTextSegment(anchor, offset)) {
@@ -215,12 +261,14 @@ export class AnchorQuery implements AnchorQueryInterface {
                 offset--;
             }
             return {
-                container: anchor.container,
-                offset: offset,
+                next: {
+                    container: anchor.container,
+                    offset: offset,
+                },
             }
         }
 
-        if (direction === "right") {
+        if (step.direction === "right") {
             let offset = anchor.offset + 1;
             const textContent = anchor.container.textContent || "";
             while (offset < textContent.length - 1) {
@@ -230,12 +278,17 @@ export class AnchorQuery implements AnchorQueryInterface {
                 offset++;
             }
             return {
-                container: anchor.container,
-                offset: offset,
+                next: {
+                    container: anchor.container,
+                    offset: offset,
+                },
             }
         }
 
-        throw new Error(`Invalid neighbor direction ${direction}`);
+        return {
+            next: null,
+            error: this._makeError(ErrorCode.INVALID_DIRECTION, "_getHorizontalNeighborCase1", this.messages.QUERY_ERROR.INVALID_NEIGHBOR_DIRECTION),
+        }
     }
 
     /**
@@ -255,25 +308,30 @@ export class AnchorQuery implements AnchorQueryInterface {
  * @param neighborPayload 
  * @returns 
  */
-    _getHorizontalNeighborCase2(neighborPayload: NeighborPayload): Anchor | null {
-        const { anchor, direction } = neighborPayload;
+    _getHorizontalNeighborCase2(neighborPayload: NeighborPayload): SimpleNeighborResult {
+        const { anchor, step } = neighborPayload;
         const { container } = anchor;
 
         if (anchor.container.nodeType !== Node.TEXT_NODE) {
-            throw new InvalidAnchorError(anchor);
+            return {
+                next: null,
+                error: this._makeError(ErrorCode.INVALID_ANCHOR, "_getHorizontalNeighborCase2", this.messages.QUERY_ERROR.INVALID_ANCHOR_NODE),
+            }
         }
 
         const neighborSibling = this._getNeighborSibling({
             container,
-            direction: direction
+            step
         });
 
         if (neighborSibling) {
             // case 2.1, 2.2
-            return this._getBoundaryAnchor({
-                container: neighborSibling,
-                direction: direction === "left" ? "right" : "left"
-            })
+            return {
+                next: this._getBoundaryAnchor({
+                    container: neighborSibling,
+                    step: reverseStep(step),
+                }),
+            }
         }
 
         // case 2.3
@@ -281,26 +339,33 @@ export class AnchorQuery implements AnchorQueryInterface {
         //  =><p>hello world</p>"|"
         const parent = container.parentElement;
         if (!parent || parent === this.root) {
-            return null;
+            return {
+                next: null,
+                error: this._makeError(ErrorCode.AT_BOUNDARY, "_getHorizontalNeighborCase2", this.messages.QUERY_ERROR.AT_TEXT_NODE_BOUNDARY),
+            }
         }
         const parentNeighborSibling = this._getNeighborSibling({
             container: parent,
-            direction: direction
+            step: step,
         })
         if (parentNeighborSibling instanceof Text) {
-            return this._getBoundaryAnchor({
-                container: parentNeighborSibling,
-                direction: direction === "left" ? "right" : "left"
-            })
+            return {
+                next: this._getBoundaryAnchor({
+                    container: parentNeighborSibling,
+                    step: reverseStep(step),
+                }),
+            }
         }
-        if (direction === "left") {
+        if (step.direction === "left") {
             parent.before(this.textPlaceholder);
         } else {
             parent.after(this.textPlaceholder);
         }
         return {
-            container: this.textPlaceholder,
-            offset: 0,
+            next: {
+                container: this.textPlaceholder,
+                offset: 0,
+            },
         }
 
     }
@@ -322,10 +387,13 @@ export class AnchorQuery implements AnchorQueryInterface {
  * @param neighborPayload 
  * @returns 
  */
-    _getHorizontalNeighborCase3({ anchor, direction }: NeighborPayload): Anchor | null {
+    _getHorizontalNeighborCase3({ anchor, step }: NeighborPayload): SimpleNeighborResult {
         // do normalize then route to case1 or case2
         if (anchor.container.nodeType === Node.TEXT_NODE) {
-            throw new InvalidAnchorError(anchor);
+            return {
+                next: null,
+                error: this._makeError(ErrorCode.INVALID_ANCHOR, "_getHorizontalNeighborCase3", "[horizontal case3] Anchor is a text node"),
+            }
         }
 
         const { container, offset } = anchor;
@@ -336,9 +404,9 @@ export class AnchorQuery implements AnchorQueryInterface {
             return this._getHorizontalNeighbor({
                 anchor: this._getBoundaryAnchor({
                     container: container.childNodes[offset],
-                    direction: 'left'
+                    step: reverseStep(step),
                 }),
-                direction: direction
+                step: step,
             })
         }
         if (container.childNodes[offset - 1] instanceof Text) {
@@ -347,9 +415,9 @@ export class AnchorQuery implements AnchorQueryInterface {
             return this._getHorizontalNeighbor({
                 anchor: this._getBoundaryAnchor({
                     container: container.childNodes[offset - 1],
-                    direction: 'right'
+                    step: reverseStep(step),
                 }),
-                direction: direction
+                step: step
             })
         }
 
@@ -362,7 +430,7 @@ export class AnchorQuery implements AnchorQueryInterface {
                     container: this.textPlaceholder,
                     offset: 0,
                 },
-                direction: direction
+                step: step,
             })
         }
 
@@ -375,36 +443,46 @@ export class AnchorQuery implements AnchorQueryInterface {
                 container: text,
                 offset: 0,
             },
-            direction: direction
+            step: step,
         })
     }
 
-    _getHorizontalNeighbor({ anchor, direction }: NeighborPayload): Anchor | null {
-        let ret = null;
+    _getHorizontalNeighbor({ anchor, step }: NeighborPayload): SimpleNeighborResult {
+        let ret: SimpleNeighborResult = {
+            next: null,
+            error: undefined,
+        };
         if (anchor.container instanceof Text) {
             const { container, offset } = anchor;
             const textContent = container.textContent || "";
 
-            if ((offset === 0 && direction === "left") ||
-                (offset === textContent.length && direction === "right")) {
-                ret = this._getHorizontalNeighborCase2({ anchor, direction });
+            if ((offset === 0 && step.direction === "left") ||
+                (offset === textContent.length && step.direction === "right")) {
+                ret = this._getHorizontalNeighborCase2({ anchor, step });
             } else {
-                ret = this._getHorizontalNeighborCase1({ anchor, direction });
+                ret = this._getHorizontalNeighborCase1({ anchor, step });
             }
 
         } else if (anchor.container instanceof HTMLElement) {
-            ret = this._getHorizontalNeighborCase3({ anchor, direction });
-        }
-
-        if (ret && ret.container !== anchor.container) {
-            this.config.onLeaveNode?.(anchor);
-            this.config.onEnterNode?.(ret);
+            ret = this._getHorizontalNeighborCase3({ anchor, step });
+        } else {
+            ret = {
+                next: null,
+                error: this._makeError(
+                    ErrorCode.INVALID_ANCHOR,
+                    "_getHorizontalNeighbor",
+                    this.messages.QUERY_ERROR.NOT_TEXT_NODE_OR_HTML_ELEMENT,
+                    {
+                        nodeType: anchor.container.nodeType,
+                    }
+                ),
+            }
         }
 
         return ret;
     }
 
-    _getSoftVerticalNeighbor({ anchor, direction }: NeighborPayload): Anchor {
+    _getSoftVerticalNeighbor({ anchor, step }: NeighborPayload): Anchor {
         throw new Error("Method not implemented.");
     }
 
@@ -441,9 +519,6 @@ export class AnchorQuery implements AnchorQueryInterface {
     }
 
     nodeTokensize(node: Node): number {
-        if (this.subQueryer) {
-            return this.subQueryer.nodeTokensize(node);
-        }
         return this._nodeTokensize(node);
     }
 
@@ -501,9 +576,6 @@ export class AnchorQuery implements AnchorQueryInterface {
         return current;
     }
     getAnchorByOffset(offset: number, base?: Anchor): Anchor {
-        if (this.subQueryer) {
-            return this.subQueryer.getAnchorByOffset(offset, base);
-        }
         return this._getAnchorByOffset(offset, base);
     }
 
@@ -536,14 +608,20 @@ export class AnchorQuery implements AnchorQueryInterface {
         while (current && current !== this.root) {
             let currentSibling = this._getNeighborSibling({
                 container: current,
-                direction: "left"
+                step: {
+                    direction: 'left',
+                    stride: "char",
+                }
             });
             while (currentSibling) {
                 size += this.nodeTokensize(currentSibling);
                 console.debug(currentSibling.nodeName, size);
                 currentSibling = this._getNeighborSibling({
                     container: currentSibling,
-                    direction: "left"
+                    step: {
+                        direction: 'left',
+                        stride: "char",
+                    }
                 });
             }
             if (!current.parentElement) {
@@ -558,9 +636,6 @@ export class AnchorQuery implements AnchorQueryInterface {
         return size - 1;
     }
     getOffsetByAnchor(anchor: Anchor): number {
-        if (this.subQueryer) {
-            return this.subQueryer.getOffsetByAnchor(anchor);
-        }
         return this._getOffsetByAnchor(anchor);
     }
 
@@ -643,23 +718,26 @@ export class AnchorQuery implements AnchorQueryInterface {
      *      anchor = parent.parentElementOffset
      * 
      */
-    getHorizontalAnchor(neighborPayload: NeighborPayload): Anchor | null {
-        if (this.subQueryer) {
-            return this.subQueryer.getHorizontalAnchor(neighborPayload);
-        }
-        const anchor = this._getHorizontalNeighbor(neighborPayload);
-        if (anchor) {
-            return anchor;
-        }
-        if (this.parentQueryer) {
-            return this.parentQueryer.getHorizontalAnchor(neighborPayload);
-        }
-        return null;
+    getHorizontalAnchor(neighborPayload: NeighborPayload): NeighborResult {
+        // let ret = null;
+
+        const ret = this._getHorizontalNeighbor(neighborPayload);
+        const nodeChanged = ret.next === null ?
+            null : ret.next?.container === neighborPayload.anchor.container;
+
+        const result: NeighborResult = {
+            prev: neighborPayload.anchor,
+            next: ret.next,
+            step: neighborPayload.step,
+            nodeChanged: nodeChanged,
+            imp: this,
+            error: ret.error,
+        };
+
+        return result;
     }
-    getVerticalAnchor(neighborPayload: NeighborPayload): Anchor | null {
-        if (this.subQueryer) {
-            return this.subQueryer.getVerticalAnchor(neighborPayload);
-        }
+
+    getVerticalAnchor(neighborPayload: NeighborPayload): NeighborResult {
         // return this._getVerticalNeighbor(neighborPayload);
         throw new Error("not implemented");
     }
@@ -667,88 +745,4 @@ export class AnchorQuery implements AnchorQueryInterface {
 }
 
 
-export class AnchorEditor extends AnchorQuery implements AnchorEditorInterface {
-    lastMoveDirection: "left" | "right" | "up" | "down" | "none" = "none";
-    lastMoveAnchor: "start" | "end" | "none" = "none";
-    // constructor(config: LocConfig, root: HTMLElement) {
-    //     super(config, root);
-    // }
 
-
-    setAnchor(anchor: Anchor): boolean {
-        const selection = document.getSelection();
-        if (selection) {
-            selection.setPosition(anchor.container, anchor.offset);
-            this.lastMoveDirection = "none";
-            this.lastMoveAnchor = "none";
-            return true;
-        }
-        return false;
-    }
-    setStartAnchor(anchor: Anchor): boolean {
-        const range = document.getSelection()?.getRangeAt(0);
-        if (range) {
-            range.setStart(anchor.container, anchor.offset);
-            this.lastMoveDirection = "none";
-            this.lastMoveAnchor = "start";
-            return true;
-        }
-        return false;
-    }
-    setEndAnchor(anchor: Anchor): boolean {
-        const range = document.getSelection()?.getRangeAt(0);
-        if (range) {
-            range.setEnd(anchor.container, anchor.offset);
-            this.lastMoveDirection = "none";
-            this.lastMoveAnchor = "end";
-            return true;
-        }
-        return false;
-    }
-
-    setRange(start: Anchor, end: Anchor): boolean {
-        const range = document.getSelection()?.getRangeAt(0);
-        if (range) {
-            range.setStart(start.container, start.offset);
-            range.setEnd(end.container, end.offset);
-            this.lastMoveDirection = "none";
-            this.lastMoveAnchor = "none";
-            return true;
-        }
-        return false;
-    }
-
-    setEndAnchorTo(direction: "left" | "right"): boolean {
-        const range = document.getSelection()?.getRangeAt(0);
-        if (range) {
-            const next = this.getHorizontalAnchor({
-                anchor: { container: range.endContainer, offset: range.endOffset },
-                direction: direction
-            });
-            if (next) {
-                this.setEndAnchor(next);
-                this.lastMoveDirection = direction;
-                this.lastMoveAnchor = "end";
-                return true;
-            }
-        }
-        return false;
-    }
-
-    setStartAnchorTo(direction: "left" | "right"): boolean {
-        const range = document.getSelection()?.getRangeAt(0);
-        if (range) {
-            const prev = this.getHorizontalAnchor({
-                anchor: { container: range.startContainer, offset: range.startOffset },
-                direction: direction
-            });
-            if (prev) {
-                this.setStartAnchor(prev);
-                this.lastMoveDirection = direction;
-                this.lastMoveAnchor = "start";
-                return true;
-            }
-        }
-        return false;
-    }
-}

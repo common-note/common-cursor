@@ -1,4 +1,5 @@
 import type { QueryError } from './errors';
+import { Tokenizer } from './tokenizer';
 
 export interface Anchor {
   container: ContainerType;
@@ -7,11 +8,12 @@ export interface Anchor {
 
 export type Direction = 'left' | 'right' | 'up' | 'down';
 export type Stride =
+  // strides that handled in AnchorQuery (node level)
   | 'char' // like left/right
-  | 'word' // like alt + left/right
-  | 'segment' // like ctrl + left/right
+  | 'word' // like ctrl + left/right(in windows) or option + left/right(in mac)
   | 'softline' // like home/end in vscode wrap mode
   | 'paragraph' // like double home/end in vscode
+  // strides that handled in higher level (multiple-node level)
   | 'screen' // like pageup/pagedown
   | 'document'; // like ctrl + home/end
 
@@ -49,7 +51,7 @@ export const register = (html: HTMLElement) => {
  * AnchorQueryInterface is a unstateful class, it is a query interface for a specific node.
  */
 export interface AnchorQueryInterface {
-  isTextSegment(anchor: Anchor, offset: number): boolean;
+  tokenizer: Tokenizer;
   shouldIgnore(node: Node): boolean;
   nodeTokensize(node: Node): number;
   getAnchorByOffset(offset: number, base?: Anchor): Anchor;

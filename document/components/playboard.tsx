@@ -8,6 +8,7 @@ import { AnchorQuery } from '../../src/query';
 interface EditableDivProps {
   initialContent?: string;
   onContentChange?: (content: string) => void;
+  stride?: 'char' | 'word' | 'softline';
 }
 
 export const EditableDiv: React.FC<EditableDivProps> = ({
@@ -78,6 +79,7 @@ export const EditableDiv: React.FC<EditableDivProps> = ({
 // ... existing code ...
 export const EditablePlay: React.FC<EditableDivProps> = ({
   initialContent = '',
+  stride = 'char',
 }) => {
   const divRef = useRef<HTMLDivElement>(null);
   const displayRef = useRef<HTMLDivElement>(null);
@@ -141,7 +143,7 @@ export const EditablePlay: React.FC<EditableDivProps> = ({
           if (editor) {
             const ret = editor.moveStartAnchorTo({
               direction: 'right',
-              stride: 'char',
+              stride: stride,
             });
 
             if (ret.error && intervalRef.current) {
@@ -164,7 +166,7 @@ export const EditablePlay: React.FC<EditableDivProps> = ({
               offset: range.startOffset,
             });
           }
-        }, 100);
+        }, 500);
       } else {
         // 停止播放
         if (intervalRef.current) {

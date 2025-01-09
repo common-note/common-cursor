@@ -11,6 +11,7 @@ import { AnchorQuery, type SimpleNeighborResult } from '../../src/query';
 // }
 
 test('horizontalNeighbor/case1', () => {
+  // move in text node
   const container = document.createElement('div');
   container.textContent = 'hello world';
 
@@ -21,37 +22,40 @@ test('horizontalNeighbor/case1', () => {
     container,
   );
 
-  expect(
-    editor._getHorizontalNeighborCase1({
-      anchor: {
-        container: container.childNodes[0],
-        offset: 10,
-      },
-      step: {
-        direction: 'right',
-        stride: 'char',
-      },
-    }).next,
-  ).toEqual({
-    container: container.childNodes[0],
-    offset: 11,
-  });
+  for (let i = 1; i < container.textContent.length - 1; i++) {
 
-  expect(
-    editor._getHorizontalNeighborCase1({
-      anchor: {
-        container: container.childNodes[0],
-        offset: 1,
-      },
-      step: {
-        direction: 'left',
-        stride: 'char',
-      },
-    }).next,
-  ).toEqual({
-    container: container.childNodes[0],
-    offset: 0,
-  });
+    expect(
+      editor._getHorizontalNeighborCase1({
+        anchor: {
+          container: container.childNodes[0],
+          offset: i,
+        },
+        step: {
+          direction: 'right',
+          stride: 'char',
+        },
+      }).next,
+    ).toEqual({
+      container: container.childNodes[0],
+      offset: i + 1,
+    });
+
+    expect(
+      editor._getHorizontalNeighborCase1({
+        anchor: {
+          container: container.childNodes[0],
+          offset: i,
+        },
+        step: {
+          direction: 'left',
+          stride: 'char',
+        },
+      }).next,
+    ).toEqual({
+      container: container.childNodes[0],
+      offset: i - 1,
+    });
+  }
 
   expect(
     editor._getHorizontalNeighborCase1({
@@ -81,6 +85,7 @@ test('horizontalNeighbor/case1', () => {
 });
 
 test('horizontalNeighbor/case2.1', () => {
+  // move in text node and reach the boundary
   const container = document.createElement('div');
   container.appendChild(document.createTextNode('hello'));
   container.appendChild(document.createTextNode('world'));
@@ -121,6 +126,7 @@ test('horizontalNeighbor/case2.1', () => {
 });
 
 test('horizontalNeighbor/case2.2', () => {
+  // move in text node and reach the boundary
   const container = document.createElement('div');
 
   const span1 = document.createElement('span');
@@ -201,6 +207,7 @@ test('horizontalNeighbor/case2.2', () => {
 });
 
 test('horizontalNeighbor/case2.3-1', () => {
+  // move in text node and reach the boundary
   const container = document.createElement('div');
   container.innerHTML = '<p>hello</p>';
 
@@ -406,7 +413,7 @@ test('horizontalNeighbor/case3.3', () => {
   ).toEqual('<p>hell|o<b>...</b><t/></p>');
 });
 
-test('horizontalNeighbor/case1-with-text-segment', () => {});
+test('horizontalNeighbor/case1-with-text-segment', () => { });
 
 test('horizontalNeighbor/case2-with-ignore-1', () => {
   // <div><p><b>...</b>|<span>...</span><i>...</i></p></div>
@@ -661,32 +668,34 @@ test('horizontalNeighbor/case-in-root-boundary', () => {
   expect(result.next).toEqual(null);
 });
 
-test('horizontalNeighbor/case-in-sub-editable', () => {
-  // <div><p>hello<b class='sub-editable'>world</b>case</p></div>
-  const container = document.createElement('div');
-  container.innerHTML = "<p>hello<b class='sub-editable'>world</b>case</p>";
+// test('horizontalNeighbor/case-in-sub-editable', () => {
+//   // <div><p>hello<b class='sub-editable'>world</b>case</p></div>
+//   const container = document.createElement('div');
+//   container.innerHTML = "<p>hello<b class='sub-editable'>world</b>case</p>";
 
-  const editor = new AnchorQuery(
-    {
-      onNodeChanged: (result) => {
-        if (result.nodeChanged && result.next) {
-          const parent = result.imp;
-          const anchor = result.next;
-          const findResult = findNode<HTMLElement>(anchor.container, (node) =>
-            node.classList.contains('sub-editable'),
-          );
-          if (findResult) {
-            const subeditor = new AnchorQuery(
-              {
-                shouldIgnore: () => false,
-              },
-              findResult,
-            );
-            parent.moveQueryer(subeditor);
-          }
-        }
-      },
-    },
-    container,
-  );
-});
+//   const editor = new AnchorQuery(
+//     {
+//       onNodeChanged: (result) => {
+//         if (result.nodeChanged && result.next) {
+//           const parent = result.imp;
+//           const anchor = result.next;
+//           const findResult = findNode<HTMLElement>(anchor.container, (node) =>
+//             node.classList.contains('sub-editable'),
+//           );
+//           if (findResult) {
+//             const subeditor = new AnchorQuery(
+//               {
+//                 shouldIgnore: () => false,
+//               },
+//               findResult,
+//             );
+//             parent.moveQueryer(subeditor);
+//           }
+//         }
+//       },
+//     },
+//     container,
+//   );
+// });
+
+

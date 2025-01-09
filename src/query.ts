@@ -15,6 +15,7 @@ import type {
   NeighborResult,
   Step,
 } from './interface';
+import { DefaultTokenizer, Tokenizer } from './tokenizer';
 
 interface BoundaryPayload {
   container: ContainerType;
@@ -29,11 +30,7 @@ export interface SimpleNeighborResult {
 export interface QueryConfig {
   language?: keyof typeof I18N;
   shouldIgnore?: (node: Node, editor: AnchorQueryInterface) => boolean;
-  isTextSegment?: (
-    anchor: Anchor,
-    offset: number,
-    editor: AnchorQueryInterface,
-  ) => boolean;
+  tokenizer?: Tokenizer;
   isRoot?: (node: Node, editor: AnchorQueryInterface) => boolean;
   cachedTokensize?: boolean;
   parentQueryer?: AnchorQueryInterface;
@@ -81,10 +78,6 @@ export function isEmptyText(node: Node) {
   return (node.textContent || '').length === 0;
 }
 
-export function simpleIsTextSegment(anchor: Anchor, offset: number): boolean {
-  return true;
-}
-
 export function reverseDirection(direction: Direction): Direction {
   if (direction === 'left') {
     return 'right';
@@ -108,12 +101,15 @@ export function reverseStep(step: Step): Step {
 export class AnchorQuery implements AnchorQueryInterface {
   config: QueryConfig;
   root: Element;
+  tokenizer: Tokenizer;
   messages: MessageType;
   constructor(config: QueryConfig, root: HTMLElement) {
     this.config = config;
     this.root = root;
     this._textPlaceholder = document.createTextNode('');
     this.messages = I18N[config.language || 'en'];
+
+    this.tokenizer = this.config.tokenizer || new DefaultTokenizer();
   }
   // only return empty text node
   private _textPlaceholder: Text;
@@ -122,13 +118,6 @@ export class AnchorQuery implements AnchorQueryInterface {
       this._textPlaceholder = document.createTextNode('');
     }
     return this._textPlaceholder;
-  }
-
-  isTextSegment(anchor: Anchor, offset: number) {
-    if (!this.config.isTextSegment) {
-      return true;
-    }
-    return this.config.isTextSegment(anchor, offset, this);
   }
 
   shouldIgnore(node: Node) {
@@ -309,31 +298,10 @@ export class AnchorQuery implements AnchorQueryInterface {
         ),
       };
     }
-    if (step.direction === 'left') {
-      let offset = anchor.offset - 1;
-      while (offset > 0) {
-        if (this.isTextSegment(anchor, offset)) {
-          break;
-        }
-        offset--;
-      }
-      return {
-        next: {
-          container: anchor.container,
-          offset: offset,
-        },
-      };
-    }
 
-    if (step.direction === 'right') {
-      let offset = anchor.offset + 1;
-      const textContent = anchor.container.textContent || '';
-      while (offset < textContent.length - 1) {
-        if (this.isTextSegment(anchor, offset)) {
-          break;
-        }
-        offset++;
-      }
+    let startOffset = anchor.offset;
+    const offset = this.tokenizer.next(anchor.container.textContent || '', startOffset, step);
+    if (offset !== -1) {
       return {
         next: {
           container: anchor.container,
@@ -524,46 +492,63 @@ export class AnchorQuery implements AnchorQueryInterface {
     });
   }
 
-  _getHorizontalNeighbor({
-    anchor,
-    step,
-  }: NeighborPayload): SimpleNeighborResult {
+  _getHorizontalNeighbor(neighborPayload: NeighborPayload): SimpleNeighborResult {
+    const { anchor, step } = neighborPayload;
     let ret: SimpleNeighborResult = {
       next: null,
       error: undefined,
     };
-    if (anchor.container instanceof Text) {
-      const { container, offset } = anchor;
-      const textContent = container.textContent || '';
 
-      if (
-        (offset === 0 && step.direction === 'left') ||
-        (offset === textContent.length && step.direction === 'right')
-      ) {
-        ret = this._getHorizontalNeighborCase2({ anchor, step });
-      } else {
-        ret = this._getHorizontalNeighborCase1({ anchor, step });
-      }
-    } else if (anchor.container instanceof HTMLElement) {
-      ret = this._getHorizontalNeighborCase3({ anchor, step });
-    } else {
+    if (step.stride === "paragraph") {
       ret = {
-        next: null,
-        error: this._makeError(
-          ErrorCode.INVALID_ANCHOR,
-          '_getHorizontalNeighbor',
-          this.messages.QUERY_ERROR.NOT_TEXT_NODE_OR_HTML_ELEMENT,
-          {
-            nodeType: anchor.container.nodeType,
-          },
-        ),
-      };
+        next: this._getBoundaryAnchor({
+          container: this.root,
+          step: reverseStep(step),
+        }),
+      }
+    } else if (step.stride === "softline") {
+      ret = {
+        next: this._getSoftlineBoundary(neighborPayload),
+      }
+    } else if (step.stride === "word" || step.stride === "char") {
+
+      if (anchor.container instanceof Text) {
+        const { container, offset } = anchor;
+        const textContent = container.textContent || '';
+
+        if (
+          (offset === 0 && step.direction === 'left') ||
+          (offset === textContent.length && step.direction === 'right')
+        ) {
+          ret = this._getHorizontalNeighborCase2({ anchor, step });
+        } else {
+          ret = this._getHorizontalNeighborCase1({ anchor, step });
+        }
+      } else if (anchor.container instanceof HTMLElement) {
+        ret = this._getHorizontalNeighborCase3({ anchor, step });
+      } else {
+        ret = {
+          next: null,
+          error: this._makeError(
+            ErrorCode.INVALID_ANCHOR,
+            '_getHorizontalNeighbor',
+            this.messages.QUERY_ERROR.NOT_TEXT_NODE_OR_HTML_ELEMENT,
+            {
+              nodeType: anchor.container.nodeType,
+            },
+          ),
+        };
+      }
+      
+    } else {
+      throw new Error(`Invalid stride ${step.stride}, maybe you should process this stride in higher level`);
     }
+
 
     return ret;
   }
 
-  _getSoftVerticalNeighbor({ anchor, step }: NeighborPayload): Anchor {
+  _getSoftlineBoundary(neighborPayload: NeighborPayload): Anchor {
     throw new Error('Method not implemented.');
   }
 
@@ -727,35 +712,46 @@ export class AnchorQuery implements AnchorQueryInterface {
   /**
    *
    * case1: caret in text node and not reach the boundary (getHorizontalNeighborCase1)
+   * ```
    *      hello | world     (right || left) => neighborOffset
+   * ```
    *
    * case2: caret in text node and reach the boundary (getHorizontalNeighborCase2)
+   * ```
    *              container(Text)
    *                  ↓
    *      hello world | ... (right)
    *      ... | hello world (left)
+   * ```
    *
    * case2.1: caret in text node and reach the boundary and the boundary is a text node
+   * ```
    *      hello world | hello world         (right || left)
    *          => next.firstAnchor
    *          => prev.lastAnchor
    *      <text segment>|<text segment>
+   * ```
    *
    * case2.2: caret in text node and reach the boundary and the boundary is a html element
+   * ```
    *      hello world |<p>hello world</p>   (right)
    *              => next.firstAnchor
    *      <p>hello world</p>|hello world    (left)
    *              => prev.lastAnchor
+   * ```
    *
    * case2.3: caret in text node and reach the boundary and the node is at boundary
+   * ```
    *      <p>hello world|</p>   (right)
    *              => {container.parent, parent(p).parentElementOffset + 1}
    *      <p>|hello world</p>   (left)
    *              => {container.parent, parent(p).parentElementOffset}
+   * ```
    *
    * case3: caret in html element (getHorizontalCase3)
    *
    * case3.1: caret in html element and the html element is at boundary
+   * ```
    *        container(p)
    *            ↓
    *      <div><p>...<b>hello</b>|</p>...</div>   (right)
@@ -769,6 +765,7 @@ export class AnchorQuery implements AnchorQueryInterface {
    *                 ↑
    *             offset(0)
    *              => {container.parent, container.parentElementOffset}
+   * ```
    *
    * case3.2: caret in html element and the html element is not at boundary
    *      <p>hello</p>|<p>world</p>  (left || right)
@@ -776,27 +773,32 @@ export class AnchorQuery implements AnchorQueryInterface {
    *              => prev.firstAnchor
    *
    * case3.3: caret in html element and the neighbor element is a text node
+   * ```
    *      (n.case1) => refunction
+   * ```
    *
    * normalize: make anchor container change from html to text but keep cursor fixed in vision.
    *
    * n.case1:
-   *      caret in html element but child[offset] or child[offset - 1] is a text node
+   *      caret in html element but `child[offset]` or `child[offset - 1]` is a text node
    *
    * n.case2:
-   *      caret in html element but child[offset] and child[offset - 1] are both element node
+   *      caret in html element but `child[offset]` and `child[offset - 1]` are both element node
    *
    * get boundary Anchor
    *
-   *
+   * ```
    * <prev|next>.case1: <prev|next> exists
    * <prev|next>.case2: <prev|next> not exists
    *      anchor = parent.boundaryOffset
-   *
+   * ```
+   * 
+   * 
+   * ```
    * parent.<prev|next>.case1: <prev|next> exists
    * parent.<prev|next>.case2: <prev|next> not exists
    *      anchor = parent.parentElementOffset
-   *
+   * ```
    */
   getHorizontalAnchor(neighborPayload: NeighborPayload): NeighborResult {
     // let ret = null;

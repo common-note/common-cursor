@@ -20,7 +20,7 @@ beforeEach((ctx) => {
   };
 });
 
-test('nodeTokensize/case1', () => {
+test('getTokenOffset/case1', () => {
   const container = document.createElement('div');
   container.textContent = 'hello';
 
@@ -31,10 +31,10 @@ test('nodeTokensize/case1', () => {
     container,
   );
 
-  expect(editor.nodeTokensize(container)).toEqual(7);
+  expect(editor.getTokenOffset(container)).toEqual(7);
 });
 
-test('nodeTokensize/case2', () => {
+test('getTokenOffset/case2', () => {
   const container = document.createElement('div');
   container.innerHTML = '<b>hello</b><b>world</b>';
 
@@ -45,10 +45,10 @@ test('nodeTokensize/case2', () => {
     container,
   );
 
-  expect(editor.nodeTokensize(container)).toEqual(16);
+  expect(editor.getTokenOffset(container)).toEqual(16);
 });
 
-test('nodeTokensize/case3', () => {
+test('getTokenOffset/case3', () => {
   // <div><b>hello</b><img/><b>world</b></div>
   const container = document.createElement('div');
   container.innerHTML = '<b>hello</b><img/><b>world</b>';
@@ -60,10 +60,10 @@ test('nodeTokensize/case3', () => {
     container,
   );
 
-  expect(editor.nodeTokensize(container)).toEqual(17);
+  expect(editor.getTokenOffset(container)).toEqual(17);
 });
 
-test('nodeTokensize/case4', () => {
+test('getTokenOffset/case4', () => {
   // <div><img/></div>
   const container = document.createElement('div');
   container.innerHTML = '<img/>';
@@ -75,7 +75,7 @@ test('nodeTokensize/case4', () => {
     container,
   );
 
-  expect(editor.nodeTokensize(container)).toEqual(3);
+  expect(editor.getTokenOffset(container)).toEqual(3);
 });
 
 test('getOffsetByAnchor/case1', () => {

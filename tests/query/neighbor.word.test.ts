@@ -34,7 +34,7 @@ test('horizontalNeighbor/case1', () => {
           direction: 'right',
           stride: 'word',
         },
-      }).next,
+      }).next, `let i=${i}`
     ).toEqual({
       container: container.childNodes[0],
       offset: 5,
@@ -42,7 +42,6 @@ test('horizontalNeighbor/case1', () => {
   }
 
   for (let i = 5; i <= 10; i++) {
-    debugger
     expect(
       editor._getHorizontalNeighborCase1({
         anchor: {
@@ -57,6 +56,47 @@ test('horizontalNeighbor/case1', () => {
     ).toEqual({
       container: container.childNodes[0],
       offset: 11,
+    });
+  }
+
+
+  for (let i = 1; i <= 6; i++) {
+
+    if (i== 6){
+      debugger
+    }
+    expect(
+      editor._getHorizontalNeighborCase1({
+        anchor: {
+          container: container.childNodes[0],
+          offset: i,
+        },
+        step: {
+          direction: 'left',
+          stride: 'word',
+        },
+      }).next, `let i=${i}`
+    ).toEqual({
+      container: container.childNodes[0],
+      offset: 0,
+    });
+  }
+
+  for (let i = 7; i <= 10; i++) {
+    expect(
+      editor._getHorizontalNeighborCase1({
+        anchor: {
+          container: container.childNodes[0],
+          offset: i,
+        },
+        step: {
+          direction: 'left',
+          stride: 'word',
+        },
+      }).next, `let i=${i}`
+    ).toEqual({
+      container: container.childNodes[0],
+      offset: 6,
     });
   }
 

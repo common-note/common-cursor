@@ -11,12 +11,69 @@ interface EditableDivProps {
   stride?: 'char' | 'word' | 'softline';
 }
 
-export const EditableDiv: React.FC<EditableDivProps> = ({
+export const EditableManually: React.FC<EditableDivProps> = ({
   initialContent = '',
+  stride = 'char',
 }) => {
   const divRef = useRef<HTMLDivElement>(null);
   const displayRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<AnchorEditor | null>(null);
+
+  useEffect(() => {
+    if (!divRef.current) {
+      return;
+    }
+    // 使用 AnchorEditor 替代 AnchorQuery
+    editorRef.current = new AnchorEditor({}, divRef.current);
+    
+    // 添加键盘事件处理
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!editorRef.current) return;
+      
+      // 处理方向键
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const direction = e.key === 'ArrowLeft' ? 'left' : 'right';
+        let ret = editorRef.current.moveRangeTo({
+          direction,
+          stride,
+          shift: e.shiftKey,
+        });
+
+        if (ret.error) {
+          console.error('moveAnchorTo failed:', ret.error);
+          return;
+        }
+
+        // 更新显示信息
+        if (!displayRef.current || !anchorRef.current) return;
+        const range = document.getSelection()?.getRangeAt(0);
+        if (!range) return;
+
+        const offset = editorRef.current._getOffsetByAnchor({
+          container: range.startContainer,
+          offset: range.startOffset,
+        });
+        
+        displayRef.current.innerText = `${range.startContainer.nodeName}, ${offset}`;
+        anchorRef.current.innerText = anchorToStrong({
+          container: range.startContainer,
+          offset: range.startOffset,
+        });
+      }
+    };
+
+    divRef.current.addEventListener('keydown', handleKeyDown);
+    
+    // 清理事件监听器
+    return () => {
+      divRef.current?.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [stride]); // 添加 stride 作为依赖
+
   useEffect(() => {
     if (!divRef.current) {
       return;
@@ -24,7 +81,9 @@ export const EditableDiv: React.FC<EditableDivProps> = ({
     // 假设 register 函数存在并需要在组件挂载时调用
     const editor = new AnchorQuery({}, divRef.current);
     console.log(editor);
-    divRef.current.addEventListener('keyup', () => {
+    divRef.current.addEventListener('keyup', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       if (!displayRef.current) {
         return;
       }
@@ -77,7 +136,7 @@ export const EditableDiv: React.FC<EditableDivProps> = ({
 };
 
 // ... existing code ...
-export const EditablePlay: React.FC<EditableDivProps> = ({
+export const EditablePlayable: React.FC<EditableDivProps> = ({
   initialContent = '',
   stride = 'char',
 }) => {
@@ -141,7 +200,7 @@ export const EditablePlay: React.FC<EditableDivProps> = ({
           }
           const editor = editorRef.current;
           if (editor) {
-            const ret = editor.moveStartAnchorTo({
+            const ret = editor.moveRangeTo({
               direction: 'right',
               stride: stride,
             });

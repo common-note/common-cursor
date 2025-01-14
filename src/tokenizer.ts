@@ -40,7 +40,7 @@ export class DefaultTokenizer implements Tokenizer {
                 }
 
                 if (text[i] === ' ') {
-                    if (step.direction === 'left') {
+                    if (step.direction === 'left' && i + 1 < start) {
                         return i + 1;
                     } else if (step.direction === 'right') {
                         return i;

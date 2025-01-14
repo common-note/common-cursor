@@ -2,7 +2,7 @@
 
 ## Start
 
-import { EditableDiv, EditablePlay } from '../components/playboard';
+import { EditableManually, EditablePlayable } from '../components/playboard';
 import { version, buildTime } from "./version.json"
 
 
@@ -14,17 +14,28 @@ Write something to build your own docs! 🎁
 </div>
 
 
-<EditableDiv 
-  initialContent="在这里开始编辑..." 
+<EditableManually 
+  initialContent="在 这里 开始 编辑..." 
+  stride="char"
 />../components/playboard
 
 
-<EditablePlay 
+
+<EditableManually 
+  initialContent="在 这里 开始 编辑..." 
+  stride="word"
+/>../components/playboard
+
+
+/>../components/playboard
+
+
+<EditablePlayable 
 initialContent="在 这里 开始 编辑..." 
 stride="char"
 />../components/playboard
 
-<EditablePlay 
+<EditablePlayable 
 initialContent="在 这里 开始 编辑..." 
 stride="word"
 />../components/playboard

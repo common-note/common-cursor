@@ -13,7 +13,9 @@ import type {
   EditorRange,
   NeighborPayload,
   NeighborResult,
+  QueryCallback,
   Step,
+  UpdateOperation,
 } from './interface';
 import { DefaultTokenizer, Tokenizer } from './tokenizer';
 
@@ -98,7 +100,7 @@ export function reverseStep(step: Step): Step {
 /**
  * AnchorQuery is a unstateful class, it is a query interface for a specific node.
  */
-export class AnchorQuery implements AnchorQueryInterface {
+export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
   config: QueryConfig;
   root: Element;
   tokenizer: Tokenizer;
@@ -179,6 +181,10 @@ export class AnchorQuery implements AnchorQueryInterface {
     }
 
     return neighborSibling as HTMLElement | Text | null;
+  }
+
+  onUpdate(operation: UpdateOperation) {
+
   }
 
   _getBoundaryAnchor({ container, step }: BoundaryPayload): Anchor {
@@ -499,7 +505,13 @@ export class AnchorQuery implements AnchorQueryInterface {
       error: undefined,
     };
 
-    if (step.stride === "paragraph") {
+    if (step.stride === "none") {
+      ret = {
+        next: anchor,
+        error: undefined,
+      }
+    }
+    else if (step.stride === "paragraph") {
       ret = {
         next: this._getBoundaryAnchor({
           container: this.root,
@@ -552,7 +564,8 @@ export class AnchorQuery implements AnchorQueryInterface {
     throw new Error('Method not implemented.');
   }
 
-  _nodeTokensize(node: Node): number {
+
+  _getTokenOffset(node: Node): number {
     let ret = 0;
     if (this.shouldIgnore(node)) {
       return ret;
@@ -568,7 +581,7 @@ export class AnchorQuery implements AnchorQueryInterface {
       } else {
         for (let i = 0; i < node.childNodes.length; i++) {
           const child = node.childNodes[i];
-          ret += this.nodeTokensize(child);
+          ret += this.getTokenOffset(child);
         }
         console.debug(node.nodeName, ret + 2);
         if (isSingleClosing(node)) {
@@ -584,8 +597,8 @@ export class AnchorQuery implements AnchorQueryInterface {
     return ret;
   }
 
-  nodeTokensize(node: Node): number {
-    return this._nodeTokensize(node);
+  getTokenOffset(node: Node): number {
+    return this._getTokenOffset(node);
   }
 
   _getAnchorByOffset(offset: number, base?: Anchor): Anchor {
@@ -615,7 +628,7 @@ export class AnchorQuery implements AnchorQueryInterface {
         if (this.shouldIgnore(child)) {
           continue;
         }
-        const childSize = this.nodeTokensize(child);
+        const childSize = this.getTokenOffset(child);
         if (residual > childSize) {
           residual -= childSize;
         } else if (residual === childSize) {
@@ -662,7 +675,7 @@ export class AnchorQuery implements AnchorQueryInterface {
         if (this.shouldIgnore(container.childNodes[i])) {
           continue;
         }
-        size += this.nodeTokensize(container.childNodes[i]);
+        size += this.getTokenOffset(container.childNodes[i]);
         console.debug(container.childNodes[i].nodeName, size);
       }
       size += 1;
@@ -680,7 +693,7 @@ export class AnchorQuery implements AnchorQueryInterface {
         },
       });
       while (currentSibling) {
-        size += this.nodeTokensize(currentSibling);
+        size += this.getTokenOffset(currentSibling);
         console.debug(currentSibling.nodeName, size);
         currentSibling = this._getNeighborSibling({
           container: currentSibling,

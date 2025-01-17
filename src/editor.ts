@@ -212,5 +212,25 @@ export class AnchorEditor
       throw new Error(`invalid direction ${step.direction}`);
     }
   }
+
+  normalizeRange(range?: Range): Range {
+    if (!range) {
+      range = document.getSelection()?.getRangeAt(0);
+      if (!range) {
+        throw new Error('no selection');
+      }
+    }
+    const start = this.getNormalizeAnchor({
+      container: range.startContainer,
+      offset: range.startOffset,
+    });
+    const end = this.getNormalizeAnchor({
+      container: range.endContainer,
+      offset: range.endOffset,
+    });
+    range.setStart(start.container, start.offset);
+    range.setEnd(end.container, end.offset);
+    return range;
+  }
 }
 

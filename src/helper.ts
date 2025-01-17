@@ -249,3 +249,17 @@ export namespace DomRangeHelper {
     return range;
   }
 }
+
+
+export function indexOf(node: Node): number {
+  let current = node;
+  if (!current.parentElement) {
+    return -1;
+  }
+  for (let i = 0; i < current.parentElement!.childNodes.length; i++) {
+    if (current.parentElement!.childNodes[i] === current) {
+      return i;
+    }
+  }
+  return -1;
+}

@@ -25,17 +25,25 @@ export const EditableManually: React.FC<EditableDivProps> = ({
       return;
     }
     // 使用 AnchorEditor 替代 AnchorQuery
-    editorRef.current = new AnchorEditor({}, divRef.current);
-    
+    editorRef.current = new AnchorEditor({ shouldIgnore: (node) => node instanceof HTMLElement && node.tagName === 'LABEL' }, divRef.current);
+
+    const handleMouseUp = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const range = editorRef.current?.normalizeRange();
+      if (!range) return;
+      console.log(range);
+    };
+
     // 添加键盘事件处理
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!editorRef.current) return;
-      
+
       // 处理方向键
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
         e.stopPropagation();
-        
+
         const direction = e.key === 'ArrowLeft' ? 'left' : 'right';
         let ret = editorRef.current.moveRangeTo({
           direction,
@@ -57,7 +65,7 @@ export const EditableManually: React.FC<EditableDivProps> = ({
           container: range.startContainer,
           offset: range.startOffset,
         });
-        
+
         displayRef.current.innerText = `${range.startContainer.nodeName}, ${offset}`;
         anchorRef.current.innerText = anchorToStrong({
           container: range.startContainer,
@@ -67,10 +75,11 @@ export const EditableManually: React.FC<EditableDivProps> = ({
     };
 
     divRef.current.addEventListener('keydown', handleKeyDown);
-    
+    divRef.current.addEventListener('mouseup', handleMouseUp);
     // 清理事件监听器
     return () => {
       divRef.current?.removeEventListener('keydown', handleKeyDown);
+      divRef.current?.removeEventListener('mouseup', handleMouseUp);
     };
   }, [stride]); // 添加 stride 作为依赖
 
@@ -129,7 +138,7 @@ export const EditableManually: React.FC<EditableDivProps> = ({
         }}
         dangerouslySetInnerHTML={{ __html: initialContent }}
       >
-        
+
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import {
   InvalidBoundaryDirectionError,
   type QueryError,
 } from './errors';
-import { DomRangeHelper, getLineInfo } from './helper';
+import { DomRangeHelper, getLineInfo, indexOf } from './helper';
 import { I18N } from './i18n';
 import type { MessageType } from './i18n';
 import type {
@@ -954,5 +954,25 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
   getVerticalAnchor(neighborPayload: NeighborPayload): NeighborResult {
     // return this._getVerticalNeighbor(neighborPayload);
     throw new Error('not implemented');
+  }
+
+  getNormalizeAnchor(anchor: Anchor): Anchor {
+    let current = anchor.container;
+    while (current && current !== this.root) {
+      if (!this.shouldIgnore(current)) {
+        current = current.parentElement!;
+      } else {
+        return {
+          container: current.parentElement!,
+          offset: indexOf(current),
+        } 
+      }
+    }
+
+
+    return {
+      container: anchor.container,
+      offset: anchor.offset,
+    };
   }
 }

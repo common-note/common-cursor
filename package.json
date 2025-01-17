@@ -1,6 +1,6 @@
 {
-  "name": "cursor-navi",
-  "version": "1.0.0",
+  "name": "common-cursor",
+  "version": "0.0.1",
   "type": "module",
   "exports": {
     ".": {

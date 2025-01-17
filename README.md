@@ -1,8 +1,8 @@
-# MDS-CURSOR
+# common-cursor
 
 ## Introduction
 
-MDS-CURSOR is a library that better control the cursor in the editable HTML node.
+Common-Cursor is a library that better control the cursor in the editable HTML node.
 
 > see tests for usage examples.
 
@@ -11,7 +11,7 @@ MDS-CURSOR is a library that better control the cursor in the editable HTML node
 ### Clone the repository
 
 ```bash
-git clone https://github.com/ohno/mds-cursor.git
+git clone https://github.com/ohno/common-cursor.git
 ```
 
 ### Setup
@@ -36,3 +36,4 @@ Build the library in watch mode:
 cd document
 pnpm dev
 ```
+

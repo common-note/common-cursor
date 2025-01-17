@@ -3,11 +3,13 @@ import {
   InvalidBoundaryDirectionError,
   type QueryError,
 } from './errors';
+import { DomRangeHelper, getLineInfo } from './helper';
 import { I18N } from './i18n';
 import type { MessageType } from './i18n';
 import type {
   Anchor,
   AnchorQueryInterface,
+  AnchorRange,
   ContainerType,
   Direction,
   EditorRange,
@@ -187,7 +189,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
 
   }
 
-  _getBoundaryAnchor({ container, step }: BoundaryPayload): Anchor {
+  _getInnerBoundaryAnchor({ container, step }: BoundaryPayload): Anchor {
     if (step.direction === 'left') {
       if (container instanceof Text) {
         return {
@@ -368,7 +370,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     if (neighborSibling) {
       // case 2.1, 2.2
       return {
-        next: this._getBoundaryAnchor({
+        next: this._getInnerBoundaryAnchor({
           container: neighborSibling,
           step: reverseStep(step),
         }),
@@ -395,7 +397,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     });
     if (parentNeighborSibling instanceof Text) {
       return {
-        next: this._getBoundaryAnchor({
+        next: this._getInnerBoundaryAnchor({
           container: parentNeighborSibling,
           step: reverseStep(step),
         }),
@@ -453,7 +455,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       //    <p><any/>|world</p> (p, 1)
       //   =<p><any/>|world</p> (text`world`, 0)
       return this._getHorizontalNeighbor({
-        anchor: this._getBoundaryAnchor({
+        anchor: this._getInnerBoundaryAnchor({
           container: container.childNodes[offset],
           step: reverseStep(step),
         }),
@@ -464,7 +466,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       //    <p>hello|<any/></p> (p, 1)
       //   =<p>hello|<any/></p> (text`hello`, 5)
       return this._getHorizontalNeighbor({
-        anchor: this._getBoundaryAnchor({
+        anchor: this._getInnerBoundaryAnchor({
           container: container.childNodes[offset - 1],
           step: reverseStep(step),
         }),
@@ -513,12 +515,12 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     }
     else if (step.stride === "paragraph") {
       ret = {
-        next: this._getBoundaryAnchor({
+        next: this._getInnerBoundaryAnchor({
           container: this.root,
           step: reverseStep(step),
         }),
       }
-    } else if (step.stride === "softline") {
+    } else if (step.stride === "softline" || step.stride === "softline-boundary") {
       ret = {
         next: this._getSoftlineBoundary(neighborPayload),
       }
@@ -551,7 +553,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
           ),
         };
       }
-      
+
     } else {
       throw new Error(`Invalid stride ${step.stride}, maybe you should process this stride in higher level`);
     }
@@ -561,7 +563,122 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
   }
 
   _getSoftlineBoundary(neighborPayload: NeighborPayload): Anchor {
-    throw new Error('Method not implemented.');
+    let { container, offset } = neighborPayload.anchor;
+
+    function makeRange(prev: Anchor, next: Anchor): AnchorRange {
+      if (neighborPayload.step.direction === 'left') {
+        return {
+          start: next,
+          end: prev,
+        }
+      } else {
+        return {
+          start: prev,
+          end: next,
+        }
+      }
+    }
+
+    let nextRet = this._getHorizontalNeighbor({
+      anchor: {
+        container: container,
+        offset: offset,
+      },
+      step: {
+        direction: neighborPayload.step.direction,
+        stride: 'char',
+      },
+    }).next;
+
+    // reach the end of the root
+    if (!nextRet) {
+      return {
+        container: container,
+        offset: offset,
+      };
+    }
+
+    let nextLineInfo = getLineInfo(this.root as HTMLElement, makeRange({ container, offset }, nextRet));
+
+    console.debug(nextLineInfo);
+    // process simple case 1
+    if (nextLineInfo.lineNumber === 1 ||
+      (nextLineInfo.anchorIndex === 0 && neighborPayload.step.direction === 'left') ||
+      (nextLineInfo.lineNumber === (nextLineInfo.anchorIndex! + 1) && neighborPayload.step.direction === 'right')
+    ) {
+      return this._getInnerBoundaryAnchor({
+        container: this.root,
+        step: neighborPayload.step,
+      });
+    }
+
+
+
+    let prevRet = this._getHorizontalNeighbor({
+      anchor: {
+        container: container,
+        offset: offset,
+      },
+      step: {
+        ...reverseStep(neighborPayload.step),
+        stride: 'char',
+      },
+    }).next;
+
+    if (!prevRet) {
+      prevRet = {
+        container: container,
+        offset: offset,
+      };
+    }
+
+    let prevLineInfo = getLineInfo(this.root as HTMLElement, makeRange(prevRet, { container, offset }));
+
+
+    if (prevLineInfo.anchorIndex !== nextLineInfo.anchorIndex && neighborPayload.step.stride === 'softline-boundary') {
+      return this._getInnerBoundaryAnchor({
+        container: this.root,
+        step: neighborPayload.step,
+      });
+    }
+
+
+    // process complex case:
+    for (let i = 0; i < 500 /** assume line width not larger than 500 */; i++) {
+      prevRet = nextRet;
+      prevLineInfo = nextLineInfo;
+      nextRet = this._getHorizontalNeighbor({
+        anchor: {
+          container: container,
+          offset: offset,
+        },
+        step: {
+          direction: neighborPayload.step.direction,
+          stride: 'char',
+        },
+      }).next;
+
+      if (nextRet) {
+        nextLineInfo = getLineInfo(this.root as HTMLElement, makeRange(prevRet, nextRet));
+        console.debug(i, { container, offset }, nextRet, nextLineInfo);
+        if (prevLineInfo.anchorIndex !== nextLineInfo.anchorIndex) {
+          return {
+            container: container,
+            offset: offset,
+          };
+        }
+        container = nextRet.container;
+        offset = nextRet.offset;
+      } else {
+        throw new Error("Cannot find softline boundary");
+      }
+    }
+
+    return {
+      container: container,
+      offset: offset,
+    };
+
   }
 
 

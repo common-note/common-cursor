@@ -99,8 +99,6 @@ export const EditableManually: React.FC<EditableDivProps> = ({
         offset: range.startOffset,
       });
       displayRef.current.innerText = `${range.startContainer.nodeName}, ${offset}`;
-      console.log(range.startContainer);
-      console.log(range.startOffset);
       anchorRef.current.innerText = anchorToStrong({
         container: range.startContainer,
         offset: range.startOffset,
@@ -115,6 +113,7 @@ export const EditableManually: React.FC<EditableDivProps> = ({
 
   return (
     <div>
+      <h2>{`${stride} stride`}</h2>
       <div className="display" ref={displayRef} />
       <div ref={anchorRef} />
       <div
@@ -128,8 +127,9 @@ export const EditableManually: React.FC<EditableDivProps> = ({
           minHeight: '100px',
           outline: 'none',
         }}
+        dangerouslySetInnerHTML={{ __html: initialContent }}
       >
-        {initialContent}
+        
       </div>
     </div>
   );
@@ -218,8 +218,6 @@ export const EditablePlayable: React.FC<EditableDivProps> = ({
               offset: range.startOffset,
             });
             displayRef.current.innerText = `${range.startContainer.nodeName}, ${offset}`;
-            console.log(range.startContainer);
-            console.log(range.startOffset);
             anchorRef.current.innerText = anchorToStrong({
               container: range.startContainer,
               offset: range.startOffset,

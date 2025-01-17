@@ -6,6 +6,11 @@ export interface Anchor {
   offset: number;
 }
 
+export interface AnchorRange {
+  start: Anchor;
+  end: Anchor;
+}
+
 export type Direction = 'left' | 'right' | 'up' | 'down';
 export type RangeDirection = 'start' | 'end' | 'both';
 export type CollapsedType = 'start' | 'end' | 'none';
@@ -21,7 +26,8 @@ export type Stride =
   // strides that handled in AnchorQuery (node level)
   | 'char' // like left/right
   | 'word' // like ctrl + left/right(in windows) or option + left/right(in mac)
-  | 'softline' // like home/end in vscode wrap mode
+  | 'softline' // like home/end in vscode wrap mode, but make each softline as a unit
+  | 'softline-boundary' // like home/end in vscode wrap mode
   | 'pair' // live `t` in vim
   | 'paragraph' // like double home/end in vscode
   // strides that handled in higher level (multiple-node level)

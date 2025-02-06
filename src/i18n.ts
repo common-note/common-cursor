@@ -12,7 +12,7 @@ export type MessageType = {
   };
 };
 // Add message constants at the top of the file
-const MESSAGES_EN: MessageType = {
+export const MESSAGES_EN: MessageType = {
   QUERY_ERROR: {
     NOT_TEXT_NODE: 'Anchor is not a text node.',
     PARENT_IS_NULL_OR_ROOT: 'Parent is null or root.',

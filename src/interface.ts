@@ -9,6 +9,7 @@ export interface Anchor {
 export interface AnchorRange {
   start: Anchor;
   end: Anchor;
+  collapsed?: boolean;
 }
 
 export type Direction = 'left' | 'right' | 'up' | 'down';
@@ -43,12 +44,12 @@ export interface Step {
   shift?: boolean;
 }
 
-export interface NeighborPayload {
+export interface MovePayload {
   anchor: Anchor;
   step: Step;
 }
 
-export interface NeighborResult {
+export interface MoveResult {
   prev: Anchor;
   next: Anchor | null;
   step: Step;
@@ -68,11 +69,6 @@ export interface EditorRange {
   collapsed: boolean;
 }
 
-// edit html content = hello world
-export const register = (html: HTMLElement) => {
-  html.innerHTML = 'hello world';
-};
-
 /**
  * AnchorQueryInterface is a unstateful class, it is a query interface for a specific node.
  */
@@ -82,8 +78,8 @@ export interface AnchorQueryInterface {
   getTokenOffset(node: Node): number;
   getAnchorByOffset(offset: number, base?: Anchor): Anchor;
   getOffsetByAnchor(anchor: Anchor): number;
-  getHorizontalAnchor(neighborPayload: NeighborPayload): NeighborResult;
-  getVerticalAnchor(neighborPayload: NeighborPayload): NeighborResult;
+  getHorizontalAnchor(neighborPayload: MovePayload): MoveResult;
+  getVerticalAnchor(neighborPayload: MovePayload): MoveResult;
 }
 
 export interface QueryCallback {
@@ -91,18 +87,15 @@ export interface QueryCallback {
 }
 
 /**
- * StatefulAnchorEditorInterface is a stateful class,
+ * StatefulRangeEditorInterface is a stateful class,
  * which is a manager for multiple AnchorQueryInterface.
  */
-export interface StatefulAnchorEditorInterface {
+export interface StatefulRangeEditorInterface {
   // Anchor
-  resetAnchor(anchor: Anchor): Anchor | null;
   setAnchor(anchor: Anchor, payload: MoveAnchorPayload): Anchor | null;
-  resetEndAnchor(anchor: Anchor): Anchor | null;
   // Range
-  resetRange(start: Anchor, end: Anchor): boolean;
 
   // step
-  moveRangeTo(step: Step): NeighborResult;
+  moveRangeTo(step: Step): MoveResult;
   // moveEndAnchorTo(step: Step): NeighborResult;
 }

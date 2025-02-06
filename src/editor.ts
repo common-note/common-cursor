@@ -1,9 +1,10 @@
 import type {
   Anchor,
+  AnchorRange,
   MoveAnchorPayload,
-  NeighborResult,
+  MoveResult,
   RangeDirection,
-  StatefulAnchorEditorInterface,
+  StatefulRangeEditorInterface,
   Step,
 } from './interface';
 import { AnchorQuery, type QueryConfig } from './query';
@@ -18,57 +19,18 @@ export interface EditorConfig {
  * paragraph_rule: (node: Node) => boolean | { clazzName?: string, tagName?: string };
  * rich_rule: (node: Node) => boolean | { clazzName?: string, tagName?: string };
  *
- * AnchorEditor(config, root)
+ * RangeEditor(config, root)
  *
  */
 
 
-export class AnchorEditor
+export class RangeEditor
   extends AnchorQuery
-  implements StatefulAnchorEditorInterface {
+  implements StatefulRangeEditorInterface {
   lastMoveDirection: 'left' | 'right' | 'up' | 'down' | 'none' = 'none';
   moveAnchor: RangeDirection = 'start';
   fixedAnchor: RangeDirection = 'start';
 
-  // constructor(config: LocConfig, root: HTMLElement) {
-  //     super(config, root);
-  // }
-  resetAnchor(anchor: Anchor): Anchor | null {
-    const selection = document.getSelection();
-    if (selection) {
-      selection.setPosition(anchor.container, anchor.offset);
-      this.lastMoveDirection = 'none';
-      this.moveAnchor = 'start';
-      this.fixedAnchor = 'start';
-      return anchor;
-    }
-    return null;
-  }
-
-  resetEndAnchor(anchor: Anchor): Anchor | null {
-    const range = document.getSelection()?.getRangeAt(0);
-    if (range) {
-      range.setEnd(anchor.container, anchor.offset);
-      range.collapse();
-      this.lastMoveDirection = 'none';
-      this.moveAnchor = 'end';
-      return anchor;
-    }
-    return null;
-  }
-
-  resetRange(start: Anchor, end: Anchor): boolean {
-    const range = document.getSelection()?.getRangeAt(0);
-    if (range) {
-      range.setStart(start.container, start.offset);
-      range.setEnd(end.container, end.offset);
-      this.lastMoveDirection = 'none';
-      this.moveAnchor = 'start';
-      this.fixedAnchor = 'start';
-      return true;
-    }
-    return false;
-  }
 
   isCollapsed(): boolean {
     const range = document.getSelection()?.getRangeAt(0);
@@ -138,17 +100,18 @@ export class AnchorEditor
    *    - if shift direction is right, moveAnchor = 'end', fixedAnchor = 'start'
    * 
    */
-  moveRangeTo(step: Step): NeighborResult {
+  moveRangeTo(step: Step): MoveResult {
     const range = document.getSelection()?.getRangeAt(0);
     if (!range) {
       throw new Error('no selection');
     }
 
     if (step.direction === 'left' || step.direction === 'right') {
-      
+
       if (!step.shift && !this.isCollapsed()) {
         this.collapse(step.direction === 'left' ? 'start' : 'end');
         this.fixedAnchor = this.moveAnchor;
+        // TODO: neighborresult not include range result
         return this.getHorizontalAnchor({
           anchor: {
             container: this.moveAnchor === 'start' ? range.startContainer : range.endContainer,
@@ -184,7 +147,7 @@ export class AnchorEditor
           // move moveAnchor and keep the fixedAnchor in the same anchor
           this.moveAnchor = step.direction === 'left' ? 'start' : 'end';
           this.fixedAnchor = step.direction === 'left' ? 'end' : 'start';
-          
+
           payload.rangeDirection = this.moveAnchor;
         }
       } else {
@@ -231,6 +194,21 @@ export class AnchorEditor
     range.setStart(start.container, start.offset);
     range.setEnd(end.container, end.offset);
     return range;
+  }
+
+  getRange(): AnchorRange {
+    const range = this.normalizeRange();
+    return {
+      start: {
+        container: range.startContainer,
+        offset: range.startOffset,
+      },
+      end: {
+        container: range.endContainer,
+        offset: range.endOffset,
+      },
+      collapsed: range.collapsed,
+    }
   }
 }
 

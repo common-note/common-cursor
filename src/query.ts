@@ -3,7 +3,7 @@ import {
   InvalidBoundaryDirectionError,
   type QueryError,
 } from './errors';
-import { DomRangeHelper, getLineInfo, indexOf } from './helper';
+import { getLineInfo, indexOf } from './helper';
 import { I18N } from './i18n';
 import type { MessageType } from './i18n';
 import type {
@@ -13,16 +13,17 @@ import type {
   ContainerType,
   Direction,
   EditorRange,
-  NeighborPayload,
-  NeighborResult,
+  MovePayload,
+  MoveResult,
   QueryCallback,
   Step,
   UpdateOperation,
 } from './interface';
 import { DefaultTokenizer, Tokenizer } from './tokenizer';
 
-interface BoundaryPayload {
+interface NeighborPayload {
   container: ContainerType;
+  offset?: number;
   step: Step;
 }
 
@@ -38,7 +39,7 @@ export interface QueryConfig {
   isRoot?: (node: Node, editor: AnchorQueryInterface) => boolean;
   cachedTokensize?: boolean;
   parentQueryer?: AnchorQueryInterface;
-  onDefault?: (neighborPayload: NeighborPayload) => NeighborResult;
+  onDefault?: (neighborPayload: MovePayload) => MoveResult;
 }
 
 export function editableRange(range: Range): EditorRange {
@@ -155,7 +156,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
   _getNeighborSibling({
     container,
     step,
-  }: BoundaryPayload): HTMLElement | Text | null {
+  }: NeighborPayload): HTMLElement | Text | null {
     const siblingIterfn =
       step.direction === 'left' ? 'previousSibling' : 'nextSibling';
     const currentSibling = container;
@@ -189,7 +190,25 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
 
   }
 
-  _getInnerBoundaryAnchor({ container, step }: BoundaryPayload): Anchor {
+  getWordBoundaryAnchorInsideNode({ container, offset, step }: NeighborPayload): Anchor {
+    if (offset === undefined) {
+      throw new Error('Invalid offset');
+    }
+    if (step.stride !== 'word') {
+      throw new Error(`Invalid stride ${step.stride}, wordBoundaryAnchor only support word strides`);
+    }
+
+    const nextOffset = this.tokenizer.next(container.textContent || '', offset, step);
+    if (nextOffset === -1) {
+      throw new Error('Invalid offset');
+    }
+    return {
+      container: container,
+      offset: nextOffset,
+    };
+  }
+
+  getBoundaryAnchorInsideNode({ container, step }: NeighborPayload): Anchor {
     if (step.direction === 'left') {
       if (container instanceof Text) {
         return {
@@ -281,7 +300,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
   _getHorizontalNeighborCase1({
     anchor,
     step,
-  }: NeighborPayload): SimpleNeighborResult {
+  }: MovePayload): SimpleNeighborResult {
     if (anchor.container.nodeType !== Node.TEXT_NODE) {
       return {
         next: null,
@@ -346,7 +365,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
    * @returns
    */
   _getHorizontalNeighborCase2(
-    neighborPayload: NeighborPayload,
+    neighborPayload: MovePayload,
   ): SimpleNeighborResult {
     const { anchor, step } = neighborPayload;
     const { container } = anchor;
@@ -370,7 +389,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     if (neighborSibling) {
       // case 2.1, 2.2
       return {
-        next: this._getInnerBoundaryAnchor({
+        next: this.getBoundaryAnchorInsideNode({
           container: neighborSibling,
           step: reverseStep(step),
         }),
@@ -397,7 +416,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     });
     if (parentNeighborSibling instanceof Text) {
       return {
-        next: this._getInnerBoundaryAnchor({
+        next: this.getBoundaryAnchorInsideNode({
           container: parentNeighborSibling,
           step: reverseStep(step),
         }),
@@ -436,7 +455,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
   _getHorizontalNeighborCase3({
     anchor,
     step,
-  }: NeighborPayload): SimpleNeighborResult {
+  }: MovePayload): SimpleNeighborResult {
     // do normalize then route to case1 or case2
     if (anchor.container.nodeType === Node.TEXT_NODE) {
       return {
@@ -455,7 +474,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       //    <p><any/>|world</p> (p, 1)
       //   =<p><any/>|world</p> (text`world`, 0)
       return this._getHorizontalNeighbor({
-        anchor: this._getInnerBoundaryAnchor({
+        anchor: this.getBoundaryAnchorInsideNode({
           container: container.childNodes[offset],
           step: reverseStep(step),
         }),
@@ -466,7 +485,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       //    <p>hello|<any/></p> (p, 1)
       //   =<p>hello|<any/></p> (text`hello`, 5)
       return this._getHorizontalNeighbor({
-        anchor: this._getInnerBoundaryAnchor({
+        anchor: this.getBoundaryAnchorInsideNode({
           container: container.childNodes[offset - 1],
           step: reverseStep(step),
         }),
@@ -500,7 +519,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     });
   }
 
-  _getHorizontalNeighbor(neighborPayload: NeighborPayload): SimpleNeighborResult {
+  _getHorizontalNeighbor(neighborPayload: MovePayload): SimpleNeighborResult {
     const { anchor, step } = neighborPayload;
     let ret: SimpleNeighborResult = {
       next: null,
@@ -515,7 +534,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     }
     else if (step.stride === "paragraph") {
       ret = {
-        next: this._getInnerBoundaryAnchor({
+        next: this.getBoundaryAnchorInsideNode({
           container: this.root,
           step: reverseStep(step),
         }),
@@ -562,7 +581,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     return ret;
   }
 
-  _getSoftlineBoundary(neighborPayload: NeighborPayload): Anchor {
+  _getSoftlineBoundary(neighborPayload: MovePayload): Anchor {
     let { container, offset } = neighborPayload.anchor;
 
     function makeRange(prev: Anchor, next: Anchor): AnchorRange {
@@ -606,7 +625,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       (nextLineInfo.anchorIndex === 0 && neighborPayload.step.direction === 'left') ||
       (nextLineInfo.lineNumber === (nextLineInfo.anchorIndex! + 1) && neighborPayload.step.direction === 'right')
     ) {
-      return this._getInnerBoundaryAnchor({
+      return this.getBoundaryAnchorInsideNode({
         container: this.root,
         step: neighborPayload.step,
       });
@@ -636,7 +655,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
 
 
     if (prevLineInfo.anchorIndex !== nextLineInfo.anchorIndex && neighborPayload.step.stride === 'softline-boundary') {
-      return this._getInnerBoundaryAnchor({
+      return this.getBoundaryAnchorInsideNode({
         container: this.root,
         step: neighborPayload.step,
       });
@@ -930,7 +949,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
    *      anchor = parent.parentElementOffset
    * ```
    */
-  getHorizontalAnchor(neighborPayload: NeighborPayload): NeighborResult {
+  getHorizontalAnchor(neighborPayload: MovePayload): MoveResult {
     // let ret = null;
 
     const ret = this._getHorizontalNeighbor(neighborPayload);
@@ -939,7 +958,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
         ? null
         : ret.next?.container === neighborPayload.anchor.container;
 
-    const result: NeighborResult = {
+    const result: MoveResult = {
       prev: neighborPayload.anchor,
       next: ret.next,
       step: neighborPayload.step,
@@ -951,7 +970,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     return result;
   }
 
-  getVerticalAnchor(neighborPayload: NeighborPayload): NeighborResult {
+  getVerticalAnchor(neighborPayload: MovePayload): MoveResult {
     // return this._getVerticalNeighbor(neighborPayload);
     throw new Error('not implemented');
   }

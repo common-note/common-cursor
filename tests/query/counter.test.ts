@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { AnchorEditor } from '../../src/editor';
+import { RangeEditor } from '../../src/editor';
 
 import { beforeEach } from 'vitest';
 beforeEach((ctx) => {
@@ -24,7 +24,7 @@ test('getTokenOffset/case1', () => {
   const container = document.createElement('div');
   container.textContent = 'hello';
 
-  const editor = new AnchorEditor(
+  const editor = new RangeEditor(
     {
       shouldIgnore: () => false,
     },
@@ -38,7 +38,7 @@ test('getTokenOffset/case2', () => {
   const container = document.createElement('div');
   container.innerHTML = '<b>hello</b><b>world</b>';
 
-  const editor = new AnchorEditor(
+  const editor = new RangeEditor(
     {
       shouldIgnore: () => false,
     },
@@ -53,7 +53,7 @@ test('getTokenOffset/case3', () => {
   const container = document.createElement('div');
   container.innerHTML = '<b>hello</b><img/><b>world</b>';
 
-  const editor = new AnchorEditor(
+  const editor = new RangeEditor(
     {
       shouldIgnore: () => false,
     },
@@ -68,7 +68,7 @@ test('getTokenOffset/case4', () => {
   const container = document.createElement('div');
   container.innerHTML = '<img/>';
 
-  const editor = new AnchorEditor(
+  const editor = new RangeEditor(
     {
       shouldIgnore: () => false,
     },
@@ -82,7 +82,7 @@ test('getOffsetByAnchor/case1', () => {
   const container = document.createElement('div');
   container.innerHTML = '<b>hello</b><b>world</b>';
 
-  const editor = new AnchorEditor(
+  const editor = new RangeEditor(
     {
       shouldIgnore: () => false,
     },
@@ -113,7 +113,7 @@ test('getOffsetByAnchor/case-has-ignore-1', () => {
   const container = document.createElement('div');
   container.innerHTML = '<b>hel<i>ignore</i>lo</b><b>world</b>';
 
-  const editor = new AnchorEditor(
+  const editor = new RangeEditor(
     {
       shouldIgnore: (node) => {
         if (node instanceof HTMLElement) {
@@ -151,7 +151,7 @@ test('getOffsetByAnchor/case-has-ignore-2', () => {
   const container = document.createElement('div');
   container.innerHTML = '<b>hel<!--  -->lo</b><!--  --><b>world</b>';
 
-  const editor = new AnchorEditor(
+  const editor = new RangeEditor(
     {
       shouldIgnore: (node) => {
         if (node instanceof HTMLElement) {
@@ -189,7 +189,7 @@ test('getAnchorByOffset/case-has-ignore-2', () => {
   const container = document.createElement('div');
   container.innerHTML = '<b>hello</b><b>world</b>';
 
-  const editor = new AnchorEditor(
+  const editor = new RangeEditor(
     {
       shouldIgnore: (node) => {
         if (node instanceof HTMLElement) {

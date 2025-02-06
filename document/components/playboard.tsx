@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 // biome-ignore lint/style/useImportType: <explanation>
 import React from 'react';
-import { AnchorEditor } from '../../src/editor';
+import { RangeEditor } from '../../src/editor';
 import { anchorToStrong } from '../../src/helper';
 import { AnchorQuery } from '../../src/query';
 
@@ -18,14 +18,14 @@ export const EditableManually: React.FC<EditableDivProps> = ({
   const divRef = useRef<HTMLDivElement>(null);
   const displayRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<AnchorEditor | null>(null);
-
+  const editorRef = useRef<RangeEditor | null>(null);
+  
   useEffect(() => {
     if (!divRef.current) {
       return;
     }
-    // 使用 AnchorEditor 替代 AnchorQuery
-    editorRef.current = new AnchorEditor({ shouldIgnore: (node) => node instanceof HTMLElement && node.tagName === 'LABEL' }, divRef.current);
+    // 使用 RangeEditor 替代 AnchorQuery
+    editorRef.current = new RangeEditor({ shouldIgnore: (node) => node instanceof HTMLElement && node.tagName === 'LABEL' }, divRef.current);
 
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
@@ -152,7 +152,7 @@ export const EditablePlayable: React.FC<EditableDivProps> = ({
   const divRef = useRef<HTMLDivElement>(null);
   const displayRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<AnchorEditor | null>(null);
+  const editorRef = useRef<RangeEditor | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout>(null);
   const isFocusRef = useRef(false);
@@ -162,7 +162,7 @@ export const EditablePlayable: React.FC<EditableDivProps> = ({
     if (!divRef.current) {
       return;
     }
-    editorRef.current = new AnchorEditor({}, divRef.current);
+    editorRef.current = new RangeEditor({}, divRef.current);
 
     divRef.current.addEventListener('keyup', () => {
       // ... existing keyup handler code ...

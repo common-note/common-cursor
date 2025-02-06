@@ -16,40 +16,39 @@ export class DefaultTokenizer implements Tokenizer {
     }
 
     _nextWord(text: string, start: number, step: Step): number {
-        if (step.direction === 'left' || step.direction === 'right') {
-            let i = start;
-            // hello worl
-            // 0123456789
-            // right:
-            // 0 -> 5
-            // 5 -> 10
-            // left:
-            // 10 -> 6
-            // 6 -> 0
-            while (
-                (i > 0 && step.direction === 'left') ||
-                (i < text.length && step.direction === 'right')) {
-                if (step.direction === 'left') {
-                    i--;
-                } else if (step.direction === 'right') {
-                    i++;
-                }
-                
-                if (i < 0 || i > text.length + 1) {
+        let i = -1;
+        // hello worl
+        // 0123456789
+        // right:
+        // 0 -> 5
+        // 5 -> 10
+        // left:
+        // 10 -> 6
+        // 6 -> 0
+        if (step.direction === "left") {
+            i = start;
+            while (i > 0) {
+                i--;
+                if (i < 0) {
                     return -1;
                 }
-
-                if (text[i] === ' ') {
-                    if (step.direction === 'left' && i + 1 < start) {
-                        return i + 1;
-                    } else if (step.direction === 'right') {
-                        return i;
-                    }
+                if (text[i] === ' ' && i + 1 < start) {
+                    return i + 1;
                 }
             }
-            return i;
+        } else if (step.direction === "right") {
+            i = start;
+            while (i < text.length) {
+                i++;
+                if (i > text.length + 1) {
+                    return -1;
+                }
+                if (text[i] === ' ') {
+                    return i;
+                }
+            }
         }
-        return -1;
+        return i;
     }
 
     next(text: string, start: number, step: Step): number {

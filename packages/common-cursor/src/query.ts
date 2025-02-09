@@ -222,7 +222,10 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       throw new Error('Invalid container');
     }
     if (container instanceof Text) {
-      return this.getBoundaryAnchorInsideNode({ container: container, step });
+      return this.getBoundaryAnchorInsideNode({
+        container: container,
+        step,
+      });
     }
 
     let src: ContainerType = this.textPlaceholder;

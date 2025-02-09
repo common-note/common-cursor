@@ -1,5 +1,5 @@
-import type { Anchor, ContainerType } from 'common-cursor/interface';
 import type { RangeEditor } from 'common-cursor/editor';
+import type { Anchor, ContainerType } from 'common-cursor/interface';
 
 const DEFAULT_SUPPORT_TAGS = ['b', 'i', 'u', 's', 'sub', 'sup'];
 

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-// biome-ignore lint/style/useImportType: <explanation>
-import React from 'react';
 import { RangeEditor } from 'common-cursor/editor';
 import { anchorToString } from 'common-cursor/helper';
 import { AnchorQuery } from 'common-cursor/query';
+import { useEffect, useRef, useState } from 'react';
+// biome-ignore lint/style/useImportType: <explanation>
+import React from 'react';
 
 interface EditableDivProps {
   initialContent?: string;
@@ -19,13 +19,19 @@ export const EditableManually: React.FC<EditableDivProps> = ({
   const displayRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<RangeEditor | null>(null);
-  
+
   useEffect(() => {
     if (!divRef.current) {
       return;
     }
     // 使用 RangeEditor 替代 AnchorQuery
-    editorRef.current = new RangeEditor({ shouldIgnore: (node) => node instanceof HTMLElement && node.tagName === 'LABEL' }, divRef.current);
+    editorRef.current = new RangeEditor(
+      {
+        shouldIgnore: (node) =>
+          node instanceof HTMLElement && node.tagName === 'LABEL',
+      },
+      divRef.current,
+    );
 
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
@@ -40,12 +46,18 @@ export const EditableManually: React.FC<EditableDivProps> = ({
       if (!editorRef.current) return;
 
       // 处理方向键
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'h' || e.key === 'l') {
+      if (
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight' ||
+        e.key === 'h' ||
+        e.key === 'l'
+      ) {
         e.preventDefault();
         e.stopPropagation();
 
-        const direction = e.key === 'ArrowLeft' || e.key === 'h' ? 'left' : 'right';
-        let ret = editorRef.current.moveRangeTo({
+        const direction =
+          e.key === 'ArrowLeft' || e.key === 'h' ? 'left' : 'right';
+        const ret = editorRef.current.moveRangeTo({
           direction,
           stride,
           shift: e.shiftKey,
@@ -67,10 +79,13 @@ export const EditableManually: React.FC<EditableDivProps> = ({
         });
 
         displayRef.current.innerText = `${range.startContainer.nodeName}, ${offset}`;
-        anchorRef.current.innerText = anchorToString({
-          container: range.startContainer,
-          offset: range.startOffset,
-        }, true);
+        anchorRef.current.innerText = anchorToString(
+          {
+            container: range.startContainer,
+            offset: range.startOffset,
+          },
+          true,
+        );
       }
     };
 
@@ -108,10 +123,13 @@ export const EditableManually: React.FC<EditableDivProps> = ({
         offset: range.startOffset,
       });
       displayRef.current.innerText = `${range.startContainer.nodeName}, ${offset}`;
-      anchorRef.current.innerText = anchorToString({
-        container: range.startContainer,
-        offset: range.startOffset,
-      }, true);
+      anchorRef.current.innerText = anchorToString(
+        {
+          container: range.startContainer,
+          offset: range.startOffset,
+        },
+        true,
+      );
     });
   }, []);
 
@@ -137,9 +155,7 @@ export const EditableManually: React.FC<EditableDivProps> = ({
           outline: 'none',
         }}
         dangerouslySetInnerHTML={{ __html: initialContent }}
-      >
-
-      </div>
+      ></div>
     </div>
   );
 };
@@ -190,13 +206,16 @@ export const EditablePlayable: React.FC<EditableDivProps> = ({
       return;
     }
     divRef.current.focus();
-    editorRef.current.setAnchor({
-      container: divRef.current,
-      offset: 0,
-    }, {
-      rangeDirection: 'both',
-      collapsed: 'none',
-    });
+    editorRef.current.setAnchor(
+      {
+        container: divRef.current,
+        offset: 0,
+      },
+      {
+        rangeDirection: 'both',
+        collapsed: 'none',
+      },
+    );
     setIsPlaying((prev) => {
       if (!prev) {
         // 开始播放
@@ -274,9 +293,7 @@ export const EditablePlayable: React.FC<EditableDivProps> = ({
           minHeight: '100px',
           outline: 'none',
         }}
-      >
-        
-      </div>
+      ></div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
-import { test, expect } from 'vitest';
-import { Formatter } from '../src/formatter';
 import { RangeEditor } from 'common-cursor/editor';
 import { NodeToString } from 'common-cursor/helper';
+import { expect, test } from 'vitest';
+import { Formatter } from '../src/formatter';
 
 function createFormatter(root: HTMLElement): Formatter {
   const editor = new RangeEditor({}, root);

@@ -12,8 +12,5 @@ export default defineConfig({
       syntax: 'es2021',
     },
   ],
-  source: {
-    
-  }
+  source: {},
 });
-

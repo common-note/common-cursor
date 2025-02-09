@@ -37,3 +37,7 @@ cd document
 pnpm dev
 ```
 
+
+
+pnpm config set registry https://registry.npmjs.org
+pnpm config set registry http://mirrors.cloud.tencent.com/npm/

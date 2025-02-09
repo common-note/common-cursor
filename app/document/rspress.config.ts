@@ -1,7 +1,7 @@
 import * as path from 'node:path';
-import { defineConfig } from 'rspress/config';
 import { pluginSourceBuild } from '@rsbuild/plugin-source-build';
 import type { UserConfig } from '@rspress/shared';
+import { defineConfig } from 'rspress/config';
 const packagesDir = path.resolve(__dirname, '../../packages');
 
 export default defineConfig({

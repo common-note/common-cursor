@@ -16,7 +16,6 @@ test('horizontalNeighbor/case1', () => {
   );
 
   for (let i = 1; i < container.textContent.length - 1; i++) {
-
     expect(
       editor._getHorizontalNeighborCase1({
         anchor: {
@@ -88,11 +87,11 @@ test('horizontalNeighbor/case2.1', () => {
   const start = {
     container: container.childNodes[0],
     offset: 5,
-  }
+  };
   const end = {
     container: container.childNodes[1],
     offset: 0,
-  }
+  };
   expect(anchorToString(start, true)).toEqual('<div>hello|world</div>');
   expect(anchorToString(end, true)).toEqual('<div>hello|world</div>');
   const startNext = editor._getHorizontalNeighborCase2({
@@ -110,13 +109,8 @@ test('horizontalNeighbor/case2.1', () => {
     },
   }).next;
 
-  expect(
-    anchorToString(startNext, true),
-  ).toEqual('<div>hellow|orld</div>');
-  expect(
-    anchorToString(endPrev, true),
-  ).toEqual('<div>hell|oworld</div>');
-  
+  expect(anchorToString(startNext, true)).toEqual('<div>hellow|orld</div>');
+  expect(anchorToString(endPrev, true)).toEqual('<div>hell|oworld</div>');
 });
 
 test('horizontalNeighbor/case2.2', () => {
@@ -407,7 +401,7 @@ test('horizontalNeighbor/case3.3', () => {
   ).toEqual('<p>hell|o<b>...</b><t/></p>');
 });
 
-test('horizontalNeighbor/case1-with-text-segment', () => { });
+test('horizontalNeighbor/case1-with-text-segment', () => {});
 
 test('horizontalNeighbor/case2-with-ignore-1', () => {
   // <div><p><b>...</b>|<span>...</span><i>...</i></p></div>
@@ -665,32 +659,27 @@ test('horizontalNeighbor/case-in-root-boundary', () => {
 test('horizontalNeighbor/single-token/right', () => {
   // <div><p>hello world</p></div>
   const container = document.createElement('div');
-  container.innerHTML = "<p>hello <img src='https://picsum.photos/30/20'> world </p>";
+  container.innerHTML =
+    "<p>hello <img src='https://picsum.photos/30/20'> world </p>";
 
   const editor = new AnchorQuery({}, container);
   const start = {
     container: container.childNodes[0].childNodes[0],
     offset: 6,
-  }
+  };
   const result = editor.getHorizontalAnchor({
     anchor: start,
     step: {
       direction: 'right',
       stride: 'char',
     },
-  })
-  expect(
-    anchorToString(
-      result.prev,
-      true,
-    ),
-  ).toEqual('<p>hello |<img src="https://picsum.photos/30/20"> world </p>');
-  expect(
-    anchorToString(
-      result.next,
-      true,
-    ),
-  ).toEqual('<p>hello <img src="https://picsum.photos/30/20">| world </p>');
+  });
+  expect(anchorToString(result.prev, true)).toEqual(
+    '<p>hello |<img src="https://picsum.photos/30/20"> world </p>',
+  );
+  expect(anchorToString(result.next, true)).toEqual(
+    '<p>hello <img src="https://picsum.photos/30/20">| world </p>',
+  );
   expect(
     anchorToString(
       editor.getHorizontalAnchor({
@@ -708,27 +697,25 @@ test('horizontalNeighbor/single-token/right', () => {
 test('horizontalNeighbor/single-token/left', () => {
   // <div><p>hello world</p></div>
   const container = document.createElement('div');
-  container.innerHTML = "<p>hello <img src='https://picsum.photos/30/20'> world </p>";
+  container.innerHTML =
+    "<p>hello <img src='https://picsum.photos/30/20'> world </p>";
 
   const editor = new AnchorQuery({}, container);
   const start = {
-    container: container.childNodes[0]/** p */.childNodes[2] /** world */,
+    container: container.childNodes[0] /** p */.childNodes[2] /** world */,
     offset: 0,
-  }
+  };
   const result = editor.getHorizontalAnchor({
     anchor: start,
     step: {
       direction: 'left',
       stride: 'char',
     },
-  })
+  });
 
-  expect(
-    anchorToString(
-      result.next,
-      true,
-    ),
-  ).toEqual('<p>hello |<img src="https://picsum.photos/30/20"> world </p>');
+  expect(anchorToString(result.next, true)).toEqual(
+    '<p>hello |<img src="https://picsum.photos/30/20"> world </p>',
+  );
 
   expect(
     anchorToString(
@@ -744,7 +731,6 @@ test('horizontalNeighbor/single-token/left', () => {
     ),
   ).toEqual('<p>hello| <img src="https://picsum.photos/30/20"> world </p>');
 });
-
 
 // test('horizontalNeighbor/case-in-sub-editable', () => {
 //   // <div><p>hello<b class='sub-editable'>world</b>case</p></div>
@@ -775,5 +761,3 @@ test('horizontalNeighbor/single-token/left', () => {
 //     container,
 //   );
 // });
-
-

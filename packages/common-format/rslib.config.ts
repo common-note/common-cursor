@@ -1,6 +1,6 @@
-import { defineConfig } from '@rslib/core';
-import { pluginSourceBuild } from '@rsbuild/plugin-source-build';
 import path from 'node:path';
+import { pluginSourceBuild } from '@rsbuild/plugin-source-build';
+import { defineConfig } from '@rslib/core';
 
 // const packagesDir = path.resolve(__dirname, '..');
 

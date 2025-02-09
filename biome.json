@@ -11,6 +11,13 @@
   "formatter": {
     "indentStyle": "space"
   },
+  "json": {
+    "formatter": {
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "trailingCommas": "none"
+    }
+  },
   "javascript": {
     "formatter": {
       "quoteStyle": "single"

@@ -175,7 +175,6 @@ export interface TextRectInfo {
  * @returns
  */
 export function getLineInfo(root: HTMLElement, arange?: AnchorRange): TextRectInfo {
-  const oldMinHeight = root.style.minHeight;
   const computedStyle = getComputedStyle(root);
   root.style.minHeight = "0px";
 
@@ -254,12 +253,12 @@ export namespace DomRangeHelper {
 
 
 export function indexOf(node: Node): number {
-  let current = node;
+  const current = node;
   if (!current.parentElement) {
     return -1;
   }
-  for (let i = 0; i < current.parentElement!.childNodes.length; i++) {
-    if (current.parentElement!.childNodes[i] === current) {
+  for (let i = 0; i < current.parentElement.childNodes.length; i++) {
+    if (current.parentElement.childNodes[i] === current) {
       return i;
     }
   }

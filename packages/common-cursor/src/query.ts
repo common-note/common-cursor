@@ -19,7 +19,7 @@ import type {
   Step,
   UpdateOperation,
 } from './interface';
-import { DefaultTokenizer, Tokenizer } from './tokenizer';
+import { DefaultTokenizer, type Tokenizer } from './tokenizer';
 
 interface NeighborPayload {
   container: ContainerType;
@@ -186,19 +186,27 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     return neighborSibling as HTMLElement | Text | null;
   }
 
-  onUpdate(operation: UpdateOperation) {
+  onUpdate(operation: UpdateOperation) {}
 
-  }
-
-  getWordBoundaryAnchorInsideNode({ container, offset, step }: NeighborPayload): Anchor {
+  getWordBoundaryAnchorInsideNode({
+    container,
+    offset,
+    step,
+  }: NeighborPayload): Anchor {
     if (offset === undefined) {
       throw new Error('Invalid offset');
     }
     if (step.stride !== 'word') {
-      throw new Error(`Invalid stride ${step.stride}, wordBoundaryAnchor only support word strides`);
+      throw new Error(
+        `Invalid stride ${step.stride}, wordBoundaryAnchor only support word strides`,
+      );
     }
 
-    const nextOffset = this.tokenizer.next(container.textContent || '', offset, step);
+    const nextOffset = this.tokenizer.next(
+      container.textContent || '',
+      offset,
+      step,
+    );
     if (nextOffset === -1) {
       throw new Error('Invalid offset');
     }
@@ -216,7 +224,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     if (container instanceof Text) {
       return this.getBoundaryAnchorInsideNode({ container: container, step });
     }
-    
+
     let src: ContainerType = this.textPlaceholder;
     if (step.direction === 'left') {
       src = this._insertBefore(this.textPlaceholder, container as Element);
@@ -225,7 +233,10 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     } else {
       throw new Error(`Invalid direction ${step.direction}`);
     }
-    return this.getBoundaryAnchorInsideNode({ container: src, step: reverseStep(step) });
+    return this.getBoundaryAnchorInsideNode({
+      container: src,
+      step: reverseStep(step),
+    });
   }
 
   getBoundaryAnchorInsideNode({ container, step }: NeighborPayload): Anchor {
@@ -239,7 +250,9 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
 
       if (container instanceof HTMLElement) {
         if (isSingleClosing(container)) {
-          throw new Error('single closing element is not supported in getBoundaryAnchorInsideNode');
+          throw new Error(
+            'single closing element is not supported in getBoundaryAnchorInsideNode',
+          );
         }
         if (container.childNodes.length === 0) {
           container.after(this.textPlaceholder);
@@ -350,8 +363,12 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       };
     }
 
-    let startOffset = anchor.offset;
-    const offset = this.tokenizer.next(anchor.container.textContent || '', startOffset, step);
+    const startOffset = anchor.offset;
+    const offset = this.tokenizer.next(
+      anchor.container.textContent || '',
+      startOffset,
+      step,
+    );
     if (offset !== -1) {
       return {
         next: {
@@ -424,8 +441,11 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
 
       if (isSingleClosing(neighborSibling)) {
         return {
-          next: this.getBoundaryAnchorOutsideNode({ container: neighborSibling, step })
-        }
+          next: this.getBoundaryAnchorOutsideNode({
+            container: neighborSibling,
+            step,
+          }),
+        };
       }
       // case 2.2
       return {
@@ -566,25 +586,26 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       error: undefined,
     };
 
-    if (step.stride === "none") {
+    if (step.stride === 'none') {
       ret = {
         next: anchor,
         error: undefined,
-      }
-    }
-    else if (step.stride === "paragraph") {
+      };
+    } else if (step.stride === 'paragraph') {
       ret = {
         next: this.getBoundaryAnchorInsideNode({
           container: this.root,
           step: reverseStep(step),
         }),
-      }
-    } else if (step.stride === "softline" || step.stride === "softline-boundary") {
+      };
+    } else if (
+      step.stride === 'softline' ||
+      step.stride === 'softline-boundary'
+    ) {
       ret = {
         next: this._getSoftlineBoundary(neighborPayload),
-      }
-    } else if (step.stride === "word" || step.stride === "char") {
-
+      };
+    } else if (step.stride === 'word' || step.stride === 'char') {
       if (anchor.container instanceof Text) {
         const { container, offset } = anchor;
         const textContent = container.textContent || '';
@@ -612,11 +633,11 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
           ),
         };
       }
-
     } else {
-      throw new Error(`Invalid stride ${step.stride}, maybe you should process this stride in higher level`);
+      throw new Error(
+        `Invalid stride ${step.stride}, maybe you should process this stride in higher level`,
+      );
     }
-
 
     return ret;
   }
@@ -629,12 +650,12 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
         return {
           start: next,
           end: prev,
-        }
-      } 
+        };
+      }
       return {
         start: prev,
         end: next,
-      }
+      };
     }
 
     let nextRet = this._getHorizontalNeighbor({
@@ -656,21 +677,25 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       };
     }
 
-    let nextLineInfo = getLineInfo(this.root as HTMLElement, makeRange({ container, offset }, nextRet));
+    let nextLineInfo = getLineInfo(
+      this.root as HTMLElement,
+      makeRange({ container, offset }, nextRet),
+    );
 
     console.debug(nextLineInfo);
     // process simple case 1
-    if (nextLineInfo.lineNumber === 1 ||
-      (nextLineInfo.anchorIndex === 0 && neighborPayload.step.direction === 'left') ||
-      (nextLineInfo.lineNumber === (nextLineInfo.anchorIndex! + 1) && neighborPayload.step.direction === 'right')
+    if (
+      nextLineInfo.lineNumber === 1 ||
+      (nextLineInfo.anchorIndex === 0 &&
+        neighborPayload.step.direction === 'left') ||
+      (nextLineInfo.lineNumber === nextLineInfo.anchorIndex! + 1 &&
+        neighborPayload.step.direction === 'right')
     ) {
       return this.getBoundaryAnchorInsideNode({
         container: this.root,
         step: neighborPayload.step,
       });
     }
-
-
 
     let prevRet = this._getHorizontalNeighbor({
       anchor: {
@@ -690,16 +715,20 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       };
     }
 
-    let prevLineInfo = getLineInfo(this.root as HTMLElement, makeRange(prevRet, { container, offset }));
+    let prevLineInfo = getLineInfo(
+      this.root as HTMLElement,
+      makeRange(prevRet, { container, offset }),
+    );
 
-
-    if (prevLineInfo.anchorIndex !== nextLineInfo.anchorIndex && neighborPayload.step.stride === 'softline-boundary') {
+    if (
+      prevLineInfo.anchorIndex !== nextLineInfo.anchorIndex &&
+      neighborPayload.step.stride === 'softline-boundary'
+    ) {
       return this.getBoundaryAnchorInsideNode({
         container: this.root,
         step: neighborPayload.step,
       });
     }
-
 
     // process complex case:
     for (let i = 0; i < 500 /** assume line width not larger than 500 */; i++) {
@@ -717,7 +746,10 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       }).next;
 
       if (nextRet) {
-        nextLineInfo = getLineInfo(this.root as HTMLElement, makeRange(prevRet, nextRet));
+        nextLineInfo = getLineInfo(
+          this.root as HTMLElement,
+          makeRange(prevRet, nextRet),
+        );
         console.debug(i, { container, offset }, nextRet, nextLineInfo);
         if (prevLineInfo.anchorIndex !== nextLineInfo.anchorIndex) {
           return {
@@ -728,7 +760,7 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
         container = nextRet.container;
         offset = nextRet.offset;
       } else {
-        throw new Error("Cannot find softline boundary");
+        throw new Error('Cannot find softline boundary');
       }
     }
 
@@ -736,7 +768,6 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
       container: container,
       offset: offset,
     };
-
   }
 
   _getTokenOffset(node: Node): number {
@@ -898,36 +929,42 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
 
   _insertBefore(src: Node, target: Element, mergeText = true): ContainerType {
     const parent = target.parentNode;
-    const prev = this._getNeighborSibling({ container: target, step: { direction: 'left', stride: 'char' } });
+    const prev = this._getNeighborSibling({
+      container: target,
+      step: { direction: 'left', stride: 'char' },
+    });
 
     if (src instanceof Text && prev instanceof Text && mergeText) {
-        prev.textContent = (prev.textContent || "") + (src.textContent || "");
-        src.remove();
-        return prev;
+      prev.textContent = (prev.textContent || '') + (src.textContent || '');
+      src.remove();
+      return prev;
     }
     if (parent) {
-        parent.insertBefore(src, target);
+      parent.insertBefore(src, target);
     }
     return src;
   }
 
   _insertAfter(src: Node, target: Element, mergeText = true): ContainerType {
-      const parent = target.parentNode;
-      const next = this._getNeighborSibling({ container: target, step: { direction: 'right', stride: 'char' } });
+    const parent = target.parentNode;
+    const next = this._getNeighborSibling({
+      container: target,
+      step: { direction: 'right', stride: 'char' },
+    });
 
-      if (src instanceof Text && next instanceof Text && mergeText) {
-          next.textContent = (src.textContent || "") + (next.textContent || "");
-          src.remove();
-          return next;
+    if (src instanceof Text && next instanceof Text && mergeText) {
+      next.textContent = (src.textContent || '') + (next.textContent || '');
+      src.remove();
+      return next;
+    }
+    if (parent) {
+      if (target.nextSibling) {
+        parent.insertBefore(src, target.nextSibling);
+      } else {
+        parent.appendChild(src);
       }
-      if (parent) {
-          if (target.nextSibling) {
-              parent.insertBefore(src, target.nextSibling);
-          } else {
-              parent.appendChild(src);
-          }
-      }
-      return src;
+    }
+    return src;
   }
 
   /**
@@ -1013,8 +1050,8 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
    * <prev|next>.case2: <prev|next> not exists
    *      anchor = parent.boundaryOffset
    * ```
-   * 
-   * 
+   *
+   *
    * ```
    * parent.<prev|next>.case1: <prev|next> exists
    * parent.<prev|next>.case2: <prev|next> not exists
@@ -1056,10 +1093,9 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
         return {
           container: current.parentElement!,
           offset: indexOf(current),
-        } 
+        };
       }
     }
-
 
     return {
       container: anchor.container,

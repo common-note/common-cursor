@@ -208,6 +208,26 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     };
   }
 
+  getBoundaryAnchorOutsideNode({ container, step }: NeighborPayload): Anchor {
+    const parent = container.parentElement;
+    if (!parent) {
+      throw new Error('Invalid container');
+    }
+    if (container instanceof Text) {
+      return this.getBoundaryAnchorInsideNode({ container: parent, step });
+    }
+    
+    let src: ContainerType = this.textPlaceholder;
+    if (step.direction === 'left') {
+      src = this._insertBefore(this.textPlaceholder, container as Element);
+    } else if (step.direction === 'right') {
+      src = this._insertAfter(this.textPlaceholder, container as Element);
+    } else {
+      throw new Error(`Invalid direction ${step.direction}`);
+    }
+    return this.getBoundaryAnchorInsideNode({ container: src, step: reverseStep(step) });
+  }
+
   getBoundaryAnchorInsideNode({ container, step }: NeighborPayload): Anchor {
     if (step.direction === 'left') {
       if (container instanceof Text) {
@@ -216,7 +236,11 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
           offset: 0,
         };
       }
+
       if (container instanceof HTMLElement) {
+        if (isSingleClosing(container)) {
+          throw new Error('single closing element is not supported in getBoundaryAnchorInsideNode');
+        }
         if (container.childNodes.length === 0) {
           container.after(this.textPlaceholder);
           return {
@@ -396,6 +420,12 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
           }),
           step: step,
         });
+      }
+
+      if (isSingleClosing(neighborSibling)) {
+        return {
+          next: this.getBoundaryAnchorOutsideNode({ container: neighborSibling, step })
+        }
       }
       // case 2.2
       return {
@@ -600,11 +630,10 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
           start: next,
           end: prev,
         }
-      } else {
-        return {
-          start: prev,
-          end: next,
-        }
+      } 
+      return {
+        start: prev,
+        end: next,
       }
     }
 
@@ -865,6 +894,40 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
 
   _refreshNodeTokensize(node: Node): void {
     throw new Error('Method not implemented.');
+  }
+
+  _insertBefore(src: Node, target: Element): ContainerType {
+    const parent = target.parentNode;
+    const prev = this._getNeighborSibling({ container: target, step: { direction: 'left', stride: 'char' } });
+
+    if (src instanceof Text && prev instanceof Text) {
+        prev.textContent = (prev.textContent || "") + (src.textContent || "");
+        src.remove();
+        return prev;
+    }
+    if (parent) {
+        parent.insertBefore(src, target);
+    }
+    return src;
+  }
+
+  _insertAfter(src: Node, target: Element): ContainerType {
+      const parent = target.parentNode;
+      const next = this._getNeighborSibling({ container: target, step: { direction: 'right', stride: 'char' } });
+
+      if (src instanceof Text && next instanceof Text) {
+          next.textContent = (src.textContent || "") + (next.textContent || "");
+          src.remove();
+          return next;
+      }
+      if (parent) {
+          if (target.nextSibling) {
+              parent.insertBefore(src, target.nextSibling);
+          } else {
+              parent.appendChild(src);
+          }
+      }
+      return src;
   }
 
   /**

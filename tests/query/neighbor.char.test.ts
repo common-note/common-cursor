@@ -1,14 +1,7 @@
 import { expect, test } from 'vitest';
-import { anchorToString, findNode } from '../../src/helper';
+import { anchorToString } from '../../src/helper';
 
-import { AnchorQuery, type SimpleNeighborResult } from '../../src/query';
-
-// function stringifySimpleNeighborResult(result: SimpleNeighborResult) {
-//   if (result.next) {
-//     return anchorToString(result.next);
-//   }
-//   return result.error?.message || '';
-// }
+import { AnchorQuery } from '../../src/query';
 
 test('horizontalNeighbor/case1', () => {
   // move in text node
@@ -669,7 +662,7 @@ test('horizontalNeighbor/case-in-root-boundary', () => {
   expect(result.next).toEqual(null);
 });
 
-test('horizontalNeighbor/single-token', () => {
+test('horizontalNeighbor/single-token/right', () => {
   // <div><p>hello world</p></div>
   const container = document.createElement('div');
   container.innerHTML = "<p>hello <img src='https://picsum.photos/30/20'> world </p>";
@@ -686,18 +679,18 @@ test('horizontalNeighbor/single-token', () => {
       stride: 'char',
     },
   })
-  // expect(
-  //   anchorToString(
-  //     result.prev,
-  //     true,
-  //   ),
-  // ).toEqual('<p>hello |<img src="https://picsum.photos/30/20"> world </p>');
-  // expect(
-  //   anchorToString(
-  //     result.next,
-  //     true,
-  //   ),
-  // ).toEqual('<p>hello <img src="https://picsum.photos/30/20">| world </p>');
+  expect(
+    anchorToString(
+      result.prev,
+      true,
+    ),
+  ).toEqual('<p>hello |<img src="https://picsum.photos/30/20"> world </p>');
+  expect(
+    anchorToString(
+      result.next,
+      true,
+    ),
+  ).toEqual('<p>hello <img src="https://picsum.photos/30/20">| world </p>');
   expect(
     anchorToString(
       editor.getHorizontalAnchor({
@@ -711,6 +704,47 @@ test('horizontalNeighbor/single-token', () => {
     ),
   ).toEqual('<p>hello <img src="https://picsum.photos/30/20"> |world </p>');
 });
+
+test('horizontalNeighbor/single-token/left', () => {
+  // <div><p>hello world</p></div>
+  const container = document.createElement('div');
+  container.innerHTML = "<p>hello <img src='https://picsum.photos/30/20'> world </p>";
+
+  const editor = new AnchorQuery({}, container);
+  const start = {
+    container: container.childNodes[0]/** p */.childNodes[2] /** world */,
+    offset: 0,
+  }
+  const result = editor.getHorizontalAnchor({
+    anchor: start,
+    step: {
+      direction: 'left',
+      stride: 'char',
+    },
+  })
+
+  expect(
+    anchorToString(
+      result.next,
+      true,
+    ),
+  ).toEqual('<p>hello |<img src="https://picsum.photos/30/20"> world </p>');
+
+  expect(
+    anchorToString(
+      editor.getHorizontalAnchor({
+        // biome-ignore lint/style/noNonNullAssertion: <explanation>
+        anchor: result.next!,
+        step: {
+          direction: 'left',
+          stride: 'char',
+        },
+      }).next,
+      true,
+    ),
+  ).toEqual('<p>hello| <img src="https://picsum.photos/30/20"> world </p>');
+});
+
 
 // test('horizontalNeighbor/case-in-sub-editable', () => {
 //   // <div><p>hello<b class='sub-editable'>world</b>case</p></div>

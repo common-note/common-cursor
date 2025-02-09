@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { defineConfig } from 'rspress/config';
 import { pluginSourceBuild } from '@rsbuild/plugin-source-build';
+import type { UserConfig } from '@rspress/shared';
 const packagesDir = path.resolve(__dirname, '../../packages');
 
 export default defineConfig({
@@ -34,4 +35,4 @@ export default defineConfig({
       },
     },
   },
-});
+} as UserConfig);

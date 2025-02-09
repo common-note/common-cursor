@@ -70,7 +70,7 @@ export const EditableManually: React.FC<EditableDivProps> = ({
         anchorRef.current.innerText = anchorToString({
           container: range.startContainer,
           offset: range.startOffset,
-        });
+        }, true);
       }
     };
 
@@ -111,7 +111,7 @@ export const EditableManually: React.FC<EditableDivProps> = ({
       anchorRef.current.innerText = anchorToString({
         container: range.startContainer,
         offset: range.startOffset,
-      });
+      }, true);
     });
   }, []);
 
@@ -186,10 +186,16 @@ export const EditablePlayable: React.FC<EditableDivProps> = ({
     if (!divRef.current) {
       return;
     }
+    if (!editorRef.current) {
+      return;
+    }
     divRef.current.focus();
-    editorRef.current?.resetAnchor({
+    editorRef.current.setAnchor({
       container: divRef.current,
       offset: 0,
+    }, {
+      rangeDirection: 'both',
+      collapsed: 'none',
     });
     setIsPlaying((prev) => {
       if (!prev) {

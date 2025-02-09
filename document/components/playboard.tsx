@@ -40,11 +40,11 @@ export const EditableManually: React.FC<EditableDivProps> = ({
       if (!editorRef.current) return;
 
       // 处理方向键
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'h' || e.key === 'l') {
         e.preventDefault();
         e.stopPropagation();
 
-        const direction = e.key === 'ArrowLeft' ? 'left' : 'right';
+        const direction = e.key === 'ArrowLeft' || e.key === 'h' ? 'left' : 'right';
         let ret = editorRef.current.moveRangeTo({
           direction,
           stride,
@@ -260,6 +260,7 @@ export const EditablePlayable: React.FC<EditableDivProps> = ({
       <div
         ref={divRef}
         contentEditable
+        dangerouslySetInnerHTML={{ __html: initialContent }}
         suppressContentEditableWarning
         style={{
           border: '1px solid #ccc',
@@ -268,7 +269,7 @@ export const EditablePlayable: React.FC<EditableDivProps> = ({
           outline: 'none',
         }}
       >
-        {initialContent}
+        
       </div>
     </div>
   );

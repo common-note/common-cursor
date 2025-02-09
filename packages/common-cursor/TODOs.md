@@ -1,0 +1,15 @@
+
+- [x] editor 添加对 range 移动的支持
+- [x] 添加对 step word/softline 的支持，确保支持好了，易用性没问题了再写 Editor
+  - [x] 支持 word 的实现
+  - [x] 支持 word 的测试
+  - [x] 支持 word 的文档
+  - [x] 支持 softline 的实现
+  - [x] ~~支持 softline 的测试（js-dom 无法测试）~~
+  - [x] 支持 softline 的文档
+  - [x] 支持有富文本时对 softline 的支持 
+- [ ] 添加对任意非法位置的 normalize
+- [ ] 配合 format rich hint 实现回调函数
+- [ ] 后续需要考虑数据驱动的接口如何修改
+- [ ] 支持 format 无状态函数的实现
+- [ ] 支持一个通用的聊天数据接口库，支持分组、标签等

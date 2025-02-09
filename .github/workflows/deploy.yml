@@ -29,34 +29,33 @@ jobs:
           cache: pnpm
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      
+
       - name: Get Commit Info
         id: commit
         run: |
           COMMIT_SHA=$(git rev-parse --short HEAD)
           BUILD_DATE=$(git log -1 --format=%cd --date=format:'%Y-%m-%d %H:%M:%S')
-          echo "{\"version\": \"${COMMIT_SHA}\", \"buildTime\": \"${BUILD_DATE}\"}" > document/docs/version.json
-      
+          echo "{\"version\": \"${COMMIT_SHA}\", \"buildTime\": \"${BUILD_DATE}\"}" > app/document/docs/version.json
+
       - name: Install Dependencies
         run: |
-          cd document
+          cd app/document
           pnpm install
       - name: Build
         run: |
-          cd document
+          cd app/document
           mkdir -p dist
           pnpm build
       - name: Upload artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: document/dist
+          path: app/document/dist
 
   deploy:
-
     permissions:
-      pages: write      # to deploy to Pages
-      id-token: write   # to verify the deployment originates from an appropriate source
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
 
     environment:
       name: github-pages

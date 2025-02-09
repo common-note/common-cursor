@@ -1,31 +1,11 @@
 {
-  "name": "common-cursor",
+  "private": true,
   "version": "0.0.1",
   "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./editor": "./dist/editor.js",
-    "./errors": "./dist/errors.js",
-    "./helper": "./dist/helper.js",
-    "./i18n": "./dist/i18n.js",
-    "./interface": "./dist/interface.js",
-    "./query": "./dist/query.js",
-    "./tokenizer": "./dist/tokenizer.js"
-  },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "rslib build",
+    "build": "pnpm -r --filter=./packages/* run build",
     "check": "biome check --write",
-    "dev": "rslib build --watch",
+    "dev": "pnpm -r --filter=./app/document run dev",
     "format": "biome format --write",
     "lint": "eslint .",
     "test": "vitest run "
@@ -40,6 +20,10 @@
     "jsdom": "^21.1.1",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.8.1",
-    "vitest": "^2.1.8"
-  }
+    "vitest": "^3.0.5"
+  },
+  "workspaces": [
+    "packages/*",
+    "app/*"
+  ]
 }

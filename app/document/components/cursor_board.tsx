@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 // biome-ignore lint/style/useImportType: <explanation>
 import React from 'react';
-import { RangeEditor } from '../../src/editor';
-import { anchorToString } from '../../src/helper';
-import { AnchorQuery } from '../../src/query';
+import { RangeEditor } from 'common-cursor/editor';
+import { anchorToString } from 'common-cursor/helper';
+import { AnchorQuery } from 'common-cursor/query';
 
 interface EditableDivProps {
   initialContent?: string;

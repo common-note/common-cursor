@@ -7,7 +7,7 @@ import type {
   StatefulRangeEditorInterface,
   Step,
 } from './interface';
-import { AnchorQuery, type QueryConfig } from './query';
+import { AnchorQuery } from './query';
 
 export interface EditorConfig {
   defaultQuery: AnchorQuery;
@@ -23,14 +23,13 @@ export interface EditorConfig {
  *
  */
 
-
 export class RangeEditor
   extends AnchorQuery
-  implements StatefulRangeEditorInterface {
+  implements StatefulRangeEditorInterface
+{
   lastMoveDirection: 'left' | 'right' | 'up' | 'down' | 'none' = 'none';
   moveAnchor: RangeDirection = 'start';
   fixedAnchor: RangeDirection = 'start';
-
 
   isCollapsed(): boolean {
     const range = document.getSelection()?.getRangeAt(0);
@@ -43,7 +42,7 @@ export class RangeEditor
   collapse(rangeDirection: RangeDirection): Anchor | null {
     const range = document.getSelection()?.getRangeAt(0);
     if (range) {
-      range.collapse(rangeDirection === "start");
+      range.collapse(rangeDirection === 'start');
       return {
         container: range.startContainer,
         offset: range.startOffset,
@@ -55,18 +54,17 @@ export class RangeEditor
   setAnchor(anchor: Anchor, payload: MoveAnchorPayload): Anchor | null {
     const range = document.getSelection()?.getRangeAt(0);
     if (range) {
-      if (payload.rangeDirection === "both") {
+      if (payload.rangeDirection === 'both') {
         range.setStart(anchor.container, anchor.offset);
         range.setEnd(anchor.container, anchor.offset);
-      } else if (payload.rangeDirection === "start") {
+      } else if (payload.rangeDirection === 'start') {
         range.setStart(anchor.container, anchor.offset);
       } else {
         range.setEnd(anchor.container, anchor.offset);
       }
 
-
       if (payload.collapsed) {
-        range.collapse(payload.collapsed === "start");
+        range.collapse(payload.collapsed === 'start');
       }
       // range.setStart(anchor.container, anchor.offset);
       // range.setEnd(anchor.container, anchor.offset);
@@ -90,15 +88,15 @@ export class RangeEditor
 
   /**
    * moveAnchorTo only considered keyboard event:
-   * 
+   *
    * it set the selection by control the moveAnchor and fixedAnchor
    * 1. selection is collapsed
    *    - moveAnchor = caretAnchor = 'start'
-   * 
+   *
    * 2. selection is not collapsed
    *    - if shift direction is left, moveAnchor = 'start', fixedAnchor = 'end'
    *    - if shift direction is right, moveAnchor = 'end', fixedAnchor = 'start'
-   * 
+   *
    */
   moveRangeTo(step: Step): MoveResult {
     const range = document.getSelection()?.getRangeAt(0);
@@ -107,15 +105,18 @@ export class RangeEditor
     }
 
     if (step.direction === 'left' || step.direction === 'right') {
-
       if (!step.shift && !this.isCollapsed()) {
         this.collapse(step.direction === 'left' ? 'start' : 'end');
         this.fixedAnchor = this.moveAnchor;
         // TODO: neighborresult not include range result
         return this.getHorizontalAnchor({
           anchor: {
-            container: this.moveAnchor === 'start' ? range.startContainer : range.endContainer,
-            offset: this.moveAnchor === 'start' ? range.startOffset : range.endOffset
+            container:
+              this.moveAnchor === 'start'
+                ? range.startContainer
+                : range.endContainer,
+            offset:
+              this.moveAnchor === 'start' ? range.startOffset : range.endOffset,
           },
           step: {
             direction: step.direction,
@@ -126,8 +127,12 @@ export class RangeEditor
 
       const result = this.getHorizontalAnchor({
         anchor: {
-          container: this.moveAnchor === 'start' ? range.startContainer : range.endContainer,
-          offset: this.moveAnchor === 'start' ? range.startOffset : range.endOffset
+          container:
+            this.moveAnchor === 'start'
+              ? range.startContainer
+              : range.endContainer,
+          offset:
+            this.moveAnchor === 'start' ? range.startOffset : range.endOffset,
         },
         step: step,
       });
@@ -135,7 +140,7 @@ export class RangeEditor
         return result;
       }
 
-      let payload: MoveAnchorPayload = {
+      const payload: MoveAnchorPayload = {
         rangeDirection: this.moveAnchor,
       };
       if (step.shift) {
@@ -171,13 +176,13 @@ export class RangeEditor
       }
 
       return result;
-    } else {
-      throw new Error(`invalid direction ${step.direction}`);
     }
+    throw new Error(`invalid direction ${step.direction}`);
   }
 
   normalizeRange(range?: Range): Range {
     if (!range) {
+      // biome-ignore lint/style/noParameterAssign: <explanation>
       range = document.getSelection()?.getRangeAt(0);
       if (!range) {
         throw new Error('no selection');
@@ -208,7 +213,6 @@ export class RangeEditor
         offset: range.endOffset,
       },
       collapsed: range.collapsed,
-    }
+    };
   }
 }
-

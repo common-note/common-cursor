@@ -1,5 +1,5 @@
 import type { QueryError } from './errors';
-import { Tokenizer } from './tokenizer';
+import type { Tokenizer } from './tokenizer';
 
 export interface Anchor {
   container: ContainerType;
@@ -59,7 +59,7 @@ export interface MoveResult {
 }
 
 export interface UpdateOperation {
-  type: "insert" | "delete" | "replace";
+  type: 'insert' | 'delete' | 'replace';
   anchor: Anchor;
 }
 

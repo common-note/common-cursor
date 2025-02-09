@@ -39,7 +39,7 @@ export function simpleNodeRepr(node: Node): string {
  * @param anchor
  * @returns
  */
-export function anchorToString(anchor: Anchor | null, expand: boolean = false): string {
+export function anchorToString(anchor: Anchor | null, expand = false): string {
   if (anchor === null) {
     return '';
   }
@@ -110,7 +110,6 @@ export function findNode<T extends Node>(
   return null;
 }
 
-
 export interface TextRectInfo {
   lineNumber: number;
   lineHeight: number;
@@ -168,39 +167,40 @@ export interface TextRectInfo {
 //   };
 // }
 
-
 /**
  * 获取元素的行数、行高、元素高度
  * @param root
  * @returns
  */
-export function getLineInfo(root: HTMLElement, arange?: AnchorRange): TextRectInfo {
+export function getLineInfo(
+  root: HTMLElement,
+  arange?: AnchorRange,
+): TextRectInfo {
   const computedStyle = getComputedStyle(root);
-  root.style.minHeight = "0px";
-
+  root.style.minHeight = '0px';
 
   // 获取计算后的 lineHeight，如果是 'normal' 则使用默认值 1.2
 
   const lineHeightStr = computedStyle.lineHeight;
   let lineHeight: number;
   if (lineHeightStr === 'normal') {
-    lineHeight = parseFloat(computedStyle.fontSize) * 1.2;
+    lineHeight = Number.parseFloat(computedStyle.fontSize) * 1.2;
   } else {
-    lineHeight = parseFloat(lineHeightStr);
+    lineHeight = Number.parseFloat(lineHeightStr);
   }
 
-  const firstLineY = root.getBoundingClientRect().top + (lineHeight / 2);
+  const firstLineY = root.getBoundingClientRect().top + lineHeight / 2;
 
   // 计算内容区域的实际高度（排除padding和border）
-  const contentHeight = root.offsetHeight
-    - parseFloat(computedStyle.paddingTop || '0')
-    - parseFloat(computedStyle.paddingBottom || '0')
-    - parseFloat(computedStyle.borderTopWidth || '0')
-    - parseFloat(computedStyle.borderBottomWidth || '0');
+  const contentHeight =
+    root.offsetHeight -
+    Number.parseFloat(computedStyle.paddingTop || '0') -
+    Number.parseFloat(computedStyle.paddingBottom || '0') -
+    Number.parseFloat(computedStyle.borderTopWidth || '0') -
+    Number.parseFloat(computedStyle.borderBottomWidth || '0');
 
   // 计算行数（向上取整，确保部分行也被计入）
   const lineNumber = Math.ceil(contentHeight / lineHeight);
-
 
   const result: TextRectInfo = {
     lineNumber,
@@ -222,35 +222,6 @@ export function getLineInfo(root: HTMLElement, arange?: AnchorRange): TextRectIn
 
   return result;
 }
-
-export namespace DomRangeHelper {
-  /**
-   * 创建一个 document range
-   * @param startContainer
-   * @param startOffset
-   * @param endContainer
-   * @param endOffset
-   * @returns
-   */
-  export function createRange(
-    startContainer?: Node,
-    startOffset?: number,
-    endContainer?: Node,
-    endOffset?: number
-  ): Range {
-    if (!endContainer) {
-      endContainer = startContainer;
-      endOffset = startOffset;
-    }
-    const range = document.createRange();
-    if (startContainer && startOffset !== undefined) {
-      range.setStart(startContainer, startOffset);
-      range.setEnd(endContainer!, endOffset!);
-    }
-    return range;
-  }
-}
-
 
 export function indexOf(node: Node): number {
   const current = node;

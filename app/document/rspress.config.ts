@@ -8,7 +8,7 @@ export default defineConfig({
   root: path.join(__dirname, 'docs'),
   title: 'My Site',
   icon: '/rspress-icon.png',
-  base: '/common-cursor/',
+  base: '/',
   outDir: 'dist', // 改用其他目录名称
   route: {
     exclude: ['custom.tsx', 'components/**/*'],
@@ -24,15 +24,6 @@ export default defineConfig({
         icon: 'github',
         mode: 'link',
         content: 'https://github.com/web-infra-dev/rspress',
-      },
-    ],
-  },
-  source: {
-    include: [
-      // 编译 Monorepo 的 package 目录下的所有文件
-      // 建议排除 node_modules
-      {
-        and: [packagesDir, { not: /[\\/]node_modules[\\/]/ }],
       },
     ],
   },

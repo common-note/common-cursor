@@ -1,63 +1,63 @@
 // test anchor and range text serialization is correct
 import { expect, test } from 'vitest';
-import { anchorToStrong } from '../src/helper';
+import { anchorToString } from '../src/helper';
 
-test('anchorToStrong1', () => {
+test('anchorToString1', () => {
   const anchor = {
     container: document.createElement('div'),
     offset: 0,
   };
-  expect(anchorToStrong(anchor)).toBe('<div>|</div>');
+  expect(anchorToString(anchor)).toBe('<div>|</div>');
 });
 
-test('anchorToStrong2', () => {
+test('anchorToString2', () => {
   const div = document.createElement('div');
   div.innerHTML = 'hello world';
 
   expect(
-    anchorToStrong({
+    anchorToString({
       container: div.childNodes[0],
       offset: 1,
     }),
   ).toBe('<div>h|ello world</div>');
 
   expect(
-    anchorToStrong({
+    anchorToString({
       container: div.childNodes[0],
       offset: 11,
     }),
   ).toBe('<div>hello world|</div>');
 });
 
-test('anchorToStrong3', () => {
+test('anchorToString3', () => {
   const div = document.createElement('div');
   div.innerHTML = 'hello<p>world</p>';
   expect(
-    anchorToStrong({
+    anchorToString({
       container: div,
       offset: 0,
     }),
   ).toBe('<div>|hello<p>world</p></div>');
   expect(
-    anchorToStrong({
+    anchorToString({
       container: div,
       offset: 1,
     }),
   ).toBe('<div>hello|<p>world</p></div>');
   expect(
-    anchorToStrong({
+    anchorToString({
       container: div,
       offset: 2,
     }),
   ).toBe('<div>hello<p>world</p>|</div>');
   expect(
-    anchorToStrong({
+    anchorToString({
       container: div.childNodes[1],
       offset: 1,
     }),
   ).toBe('<div><t/><p>world|</p></div>');
   expect(
-    anchorToStrong({
+    anchorToString({
       container: div.childNodes[0],
       offset: 1,
     }),

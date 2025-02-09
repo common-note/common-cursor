@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
-import { anchorToStrong } from '../../src/helper';
+import { anchorToString } from '../../src/helper';
 
 import { AnchorQuery } from '../../src/query';
 
 // function stringifySimpleNeighborResult(result: SimpleNeighborResult) {
 //   if (result.next) {
-//     return anchorToStrong(result.next);
+//     return anchorToString(result.next);
 //   }
 //   return result.error?.message || '';
 // }
@@ -140,8 +140,8 @@ test('horizontalNeighbor/case2.1', () => {
     container: container.childNodes[1],
     offset: 0,
   }
-  expect(anchorToStrong(start, true)).toEqual('<div>hello|world</div>');
-  expect(anchorToStrong(end, true)).toEqual('<div>hello|world</div>');
+  expect(anchorToString(start, true)).toEqual('<div>hello|world</div>');
+  expect(anchorToString(end, true)).toEqual('<div>hello|world</div>');
   const startNext = editor._getHorizontalNeighborCase2({
     anchor: start,
     step: {
@@ -158,10 +158,10 @@ test('horizontalNeighbor/case2.1', () => {
   }).next;
 
   expect(
-    anchorToStrong(startNext, true),
+    anchorToString(startNext, true),
   ).toEqual('<div>helloworld|</div>');
   expect(
-    anchorToStrong(endPrev, true),
+    anchorToString(endPrev, true),
   ).toEqual('<div>|helloworld</div>');
 });
 
@@ -264,7 +264,7 @@ test('horizontalNeighbor/case2.3-1', () => {
     },
   });
 
-  expect(anchorToStrong(result.next)).toEqual('<div><p>...</p>|</div>');
+  expect(anchorToString(result.next)).toEqual('<div><p>...</p>|</div>');
   result = editor._getHorizontalNeighborCase2({
     anchor: {
       container: container.childNodes[0].childNodes[0], // hello
@@ -275,7 +275,7 @@ test('horizontalNeighbor/case2.3-1', () => {
       stride: 'word',
     },
   });
-  expect(anchorToStrong(result.next)).toEqual('<div>|<p>...</p></div>');
+  expect(anchorToString(result.next)).toEqual('<div>|<p>...</p></div>');
 });
 
 test('horizontalNeighbor/case2.3-2', () => {
@@ -335,7 +335,7 @@ test('horizontalNeighbor/case3.1', () => {
   const editor = new AnchorQuery({}, container);
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -350,7 +350,7 @@ test('horizontalNeighbor/case3.1', () => {
   ).toEqual('<div><p>...</p>|</div>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -377,7 +377,7 @@ test('horizontalNeighbor/case3.2', () => {
 
   const editor = new AnchorQuery({}, container);
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: container,
@@ -392,7 +392,7 @@ test('horizontalNeighbor/case3.2', () => {
   ).toEqual('<b>|world</b>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: container,
@@ -427,7 +427,7 @@ test('horizontalNeighbor/case3.3', () => {
     offset: 2,
   }
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor,
         step: {
@@ -435,7 +435,7 @@ test('horizontalNeighbor/case3.3', () => {
           stride: 'word',
         },
       }).next,
-    ), anchorToStrong(anchor)
+    ), anchorToString(anchor)
   ).toEqual('<p><t/><b>...</b>world|</p>');
 
   anchor = {
@@ -443,7 +443,7 @@ test('horizontalNeighbor/case3.3', () => {
     offset: 1,
   }
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor,
         step: {
@@ -451,7 +451,7 @@ test('horizontalNeighbor/case3.3', () => {
           stride: 'word',
         },
       }).next,
-    ), anchorToStrong(anchor)
+    ), anchorToString(anchor)
   ).toEqual('<p>|hello<b>...</b><t/></p>');
 });
 
@@ -489,7 +489,7 @@ test('horizontalNeighbor/case2-with-ignore-1', () => {
   );
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -504,7 +504,7 @@ test('horizontalNeighbor/case2-with-ignore-1', () => {
   ).toEqual('<b>hello|</b>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -519,7 +519,7 @@ test('horizontalNeighbor/case2-with-ignore-1', () => {
   ).toEqual('<i>|world</i>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -534,7 +534,7 @@ test('horizontalNeighbor/case2-with-ignore-1', () => {
   ).toEqual('<i>|world</i>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -584,7 +584,7 @@ test('horizontalNeighbor/case2-with-ignore-2', () => {
   );
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -599,7 +599,7 @@ test('horizontalNeighbor/case2-with-ignore-2', () => {
   ).toEqual('<i>|world</i>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -614,7 +614,7 @@ test('horizontalNeighbor/case2-with-ignore-2', () => {
   ).toEqual('<i>|world</i>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -629,7 +629,7 @@ test('horizontalNeighbor/case2-with-ignore-2', () => {
   ).toEqual('<i>|world</i>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -644,7 +644,7 @@ test('horizontalNeighbor/case2-with-ignore-2', () => {
   ).toEqual('<b>hello|</b>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,
@@ -659,7 +659,7 @@ test('horizontalNeighbor/case2-with-ignore-2', () => {
   ).toEqual('<b>hello|</b>');
 
   expect(
-    anchorToStrong(
+    anchorToString(
       editor._getHorizontalNeighborCase3({
         anchor: {
           container: p1,

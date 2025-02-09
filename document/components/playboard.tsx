@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 // biome-ignore lint/style/useImportType: <explanation>
 import React from 'react';
 import { RangeEditor } from '../../src/editor';
-import { anchorToStrong } from '../../src/helper';
+import { anchorToString } from '../../src/helper';
 import { AnchorQuery } from '../../src/query';
 
 interface EditableDivProps {
@@ -67,7 +67,7 @@ export const EditableManually: React.FC<EditableDivProps> = ({
         });
 
         displayRef.current.innerText = `${range.startContainer.nodeName}, ${offset}`;
-        anchorRef.current.innerText = anchorToStrong({
+        anchorRef.current.innerText = anchorToString({
           container: range.startContainer,
           offset: range.startOffset,
         });
@@ -108,7 +108,7 @@ export const EditableManually: React.FC<EditableDivProps> = ({
         offset: range.startOffset,
       });
       displayRef.current.innerText = `${range.startContainer.nodeName}, ${offset}`;
-      anchorRef.current.innerText = anchorToStrong({
+      anchorRef.current.innerText = anchorToString({
         container: range.startContainer,
         offset: range.startOffset,
       });
@@ -227,7 +227,7 @@ export const EditablePlayable: React.FC<EditableDivProps> = ({
               offset: range.startOffset,
             });
             displayRef.current.innerText = `${range.startContainer.nodeName}, ${offset}`;
-            anchorRef.current.innerText = anchorToStrong({
+            anchorRef.current.innerText = anchorToString({
               container: range.startContainer,
               offset: range.startOffset,
             });

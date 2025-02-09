@@ -1,4 +1,4 @@
-import { NodeToString, anchorToStrong } from './helper';
+import { NodeToString, anchorToString } from './helper';
 import type { Anchor } from './interface';
 
 export enum ErrorCode {
@@ -26,7 +26,7 @@ export interface QueryError {
 
 export class InvalidAnchorError extends Error {
   constructor(anchor: Anchor) {
-    super(`Anchor: \n ${anchorToStrong(anchor)}`);
+    super(`Anchor: \n ${anchorToString(anchor)}`);
     this.name = 'InvalidAnchorError';
   }
 }

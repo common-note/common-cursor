@@ -39,7 +39,7 @@ export function simpleNodeRepr(node: Node): string {
  * @param anchor
  * @returns
  */
-export function anchorToStrong(anchor: Anchor | null, expand: boolean = false): string {
+export function anchorToString(anchor: Anchor | null, expand: boolean = false): string {
   if (anchor === null) {
     return '';
   }

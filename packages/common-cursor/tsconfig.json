@@ -1,17 +1,8 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "lib": ["ES2021", "DOM"],
-    "module": "ESNext",
-    "strict": true,
-    "skipLibCheck": true,
-    "declaration": true,
-    "moduleResolution": "bundler",
-    "useDefineForClassFields": true,
-    "allowImportingTsExtensions": true,
     "declarationDir": "./dist",
     "outDir": "./dist"
   },
-  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

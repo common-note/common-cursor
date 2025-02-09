@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ES2021",
-      "DOM"
-    ],
+    "lib": ["ES2021", "DOM"],
     "module": "ESNext",
     "noEmit": true,
     "strict": true,
@@ -16,13 +13,12 @@
     "declaration": true,
     "declarationDir": "./dist",
     "outDir": "./dist",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "rootDir": ".",
+    "baseUrl": ".", // 解析非相对模块的基目录
+    "declarationMap": true, // 生成声明文件的 sourcemap
+    "sourceMap": true // 生成 sourcemap
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-  ]
+  "include": ["packages/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

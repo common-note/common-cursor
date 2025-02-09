@@ -1,14 +1,13 @@
 import * as path from 'node:path';
 import { defineConfig } from 'rspress/config';
 import { pluginSourceBuild } from '@rsbuild/plugin-source-build';
-
 const packagesDir = path.resolve(__dirname, '../../packages');
 
 export default defineConfig({
   root: path.join(__dirname, 'docs'),
   title: 'My Site',
   icon: '/rspress-icon.png',
-  base: '/',
+  base: '/common-cursor/',
   outDir: 'dist', // 改用其他目录名称
   route: {
     exclude: ['custom.tsx', 'components/**/*'],

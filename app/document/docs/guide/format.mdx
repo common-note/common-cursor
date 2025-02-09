@@ -1,0 +1,32 @@
+# Format Playground
+
+import { version, buildTime } from "../version.json"
+import { EditableManually } from "../../components/format_board";
+
+Write something to build your own docs! 🎁
+
+<div>
+    <p>Version: {version}</p>
+    <p>BuildTime: {buildTime}</p>
+</div>
+
+<EditableManually 
+  initialContent="在 <i>这里</i> 开始 编辑..." 
+  stride="char"
+/>../components/playboard
+
+<EditableManually 
+  initialContent="在 <i>这里</i> 开始 <b>编</b>辑..." 
+  stride="char"
+/>../components/playboard
+
+<EditableManually 
+  initialContent="在 <b><i>这里</i> 开始 编</b>辑..." 
+  stride="char"
+/>../components/playboard
+
+
+<EditableManually 
+  initialContent="在 <del><i>这里</i> 开始 编</del><ins>这里</ins> 开始 编辑..." 
+  stride="char"
+/>../components/playboard../../../../noready/format_board

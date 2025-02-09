@@ -31,6 +31,7 @@ export default defineConfig({
     source: {
       alias: {
         'common-cursor': path.resolve(packagesDir, 'common-cursor/src'),
+        'common-format': path.resolve(packagesDir, 'common-format/src'),
       },
     },
   },

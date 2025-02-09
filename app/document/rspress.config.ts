@@ -35,4 +35,5 @@ export default defineConfig({
       },
     },
   },
+  globalStyles: path.resolve(__dirname, 'styles/content.css'),
 } as UserConfig);

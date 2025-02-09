@@ -1,20 +1,16 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "lib": ["ES2021", "DOM"],
     "module": "ESNext",
-    "composite": true,
     "strict": true,
     "skipLibCheck": true,
-    "isolatedModules": true,
-    "resolveJsonModule": true,
+    "declaration": true,
     "moduleResolution": "bundler",
     "useDefineForClassFields": true,
-    "declaration": true,
+    "allowImportingTsExtensions": true,
     "declarationDir": "./dist",
-    "outDir": "./dist",
-    "jsx": "react-jsx"
+    "outDir": "./dist"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

@@ -5,9 +5,9 @@ const packagesDir = path.resolve(__dirname, '../../packages');
 
 export default defineConfig({
   root: path.join(__dirname, 'docs'),
-  title: 'My Site',
+  title: 'common-note/core',
   icon: '/rspress-icon.png',
-  base: '/common-cursor/',
+  base: '/core/',
   outDir: 'dist', // 改用其他目录名称
   route: {
     exclude: ['custom.tsx', 'components/**/*'],

@@ -387,7 +387,17 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     });
 
     if (neighborSibling) {
-      // case 2.1, 2.2
+      // case 2.1
+      if (neighborSibling instanceof Text) {
+        return this.getHorizontalAnchor({
+          anchor: this.getBoundaryAnchorInsideNode({
+            container: neighborSibling,
+            step: reverseStep(step),
+          }),
+          step: step,
+        });
+      }
+      // case 2.2
       return {
         next: this.getBoundaryAnchorInsideNode({
           container: neighborSibling,
@@ -699,7 +709,6 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     };
 
   }
-
 
   _getTokenOffset(node: Node): number {
     let ret = 0;

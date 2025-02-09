@@ -92,37 +92,38 @@ test('horizontalNeighbor/case2.1', () => {
 
   const editor = new AnchorQuery({}, container);
 
-  expect(
-    editor._getHorizontalNeighborCase2({
-      anchor: {
-        container: container.childNodes[0],
-        offset: 5,
-      },
-      step: {
-        direction: 'right',
-        stride: 'char',
-      },
-    }).next,
-  ).toEqual({
-    container: container.childNodes[1],
-    offset: 0,
-  });
-
-  expect(
-    editor._getHorizontalNeighborCase2({
-      anchor: {
-        container: container.childNodes[1],
-        offset: 0,
-      },
-      step: {
-        direction: 'left',
-        stride: 'char',
-      },
-    }).next,
-  ).toEqual({
+  const start = {
     container: container.childNodes[0],
     offset: 5,
-  });
+  }
+  const end = {
+    container: container.childNodes[1],
+    offset: 0,
+  }
+  expect(anchorToStrong(start, true)).toEqual('<div>hello|world</div>');
+  expect(anchorToStrong(end, true)).toEqual('<div>hello|world</div>');
+  const startNext = editor._getHorizontalNeighborCase2({
+    anchor: start,
+    step: {
+      direction: 'right',
+      stride: 'char',
+    },
+  }).next;
+  const endPrev = editor._getHorizontalNeighborCase2({
+    anchor: end,
+    step: {
+      direction: 'left',
+      stride: 'char',
+    },
+  }).next;
+
+  expect(
+    anchorToStrong(startNext, true),
+  ).toEqual('<div>hellow|orld</div>');
+  expect(
+    anchorToStrong(endPrev, true),
+  ).toEqual('<div>hell|oworld</div>');
+  
 });
 
 test('horizontalNeighbor/case2.2', () => {
@@ -666,6 +667,49 @@ test('horizontalNeighbor/case-in-root-boundary', () => {
     },
   });
   expect(result.next).toEqual(null);
+});
+
+test('horizontalNeighbor/single-token', () => {
+  // <div><p>hello world</p></div>
+  const container = document.createElement('div');
+  container.innerHTML = "<p>hello <img src='https://picsum.photos/30/20'> world </p>";
+
+  const editor = new AnchorQuery({}, container);
+  const start = {
+    container: container.childNodes[0].childNodes[0],
+    offset: 6,
+  }
+  const result = editor.getHorizontalAnchor({
+    anchor: start,
+    step: {
+      direction: 'right',
+      stride: 'char',
+    },
+  })
+  // expect(
+  //   anchorToStrong(
+  //     result.prev,
+  //     true,
+  //   ),
+  // ).toEqual('<p>hello |<img src="https://picsum.photos/30/20"> world </p>');
+  // expect(
+  //   anchorToStrong(
+  //     result.next,
+  //     true,
+  //   ),
+  // ).toEqual('<p>hello <img src="https://picsum.photos/30/20">| world </p>');
+  expect(
+    anchorToStrong(
+      editor.getHorizontalAnchor({
+        anchor: result.next!,
+        step: {
+          direction: 'right',
+          stride: 'char',
+        },
+      }).next,
+      true,
+    ),
+  ).toEqual('<p>hello <img src="https://picsum.photos/30/20"> |world </p>');
 });
 
 // test('horizontalNeighbor/case-in-sub-editable', () => {

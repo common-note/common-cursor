@@ -39,7 +39,7 @@ export function simpleNodeRepr(node: Node): string {
  * @param anchor
  * @returns
  */
-export function anchorToStrong(anchor: Anchor | null): string {
+export function anchorToStrong(anchor: Anchor | null, expand: boolean = false): string {
   if (anchor === null) {
     return '';
   }
@@ -73,6 +73,8 @@ export function anchorToStrong(anchor: Anchor | null): string {
       const item = parent.childNodes[i];
       if (item === container) {
         chunks.push(innerHTML);
+      } else if (expand) {
+        chunks.push(NodeToString(item));
       } else {
         chunks.push(simpleNodeRepr(item));
       }

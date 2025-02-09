@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
-import { anchorToStrong, findNode } from '../../src/helper';
+import { anchorToStrong } from '../../src/helper';
 
-import { AnchorQuery, type SimpleNeighborResult } from '../../src/query';
+import { AnchorQuery } from '../../src/query';
 
 // function stringifySimpleNeighborResult(result: SimpleNeighborResult) {
 //   if (result.next) {
@@ -62,9 +62,6 @@ test('horizontalNeighbor/case1', () => {
 
   for (let i = 1; i <= 6; i++) {
 
-    if (i== 6){
-      debugger
-    }
     expect(
       editor._getHorizontalNeighborCase1({
         anchor: {
@@ -135,37 +132,37 @@ test('horizontalNeighbor/case2.1', () => {
 
   const editor = new AnchorQuery({}, container);
 
-  expect(
-    editor._getHorizontalNeighborCase2({
-      anchor: {
-        container: container.childNodes[0],
-        offset: 5,
-      },
-      step: {
-        direction: 'right',
-        stride: 'word',
-      },
-    }).next,
-  ).toEqual({
-    container: container.childNodes[1],
-    offset: 0,
-  });
-
-  expect(
-    editor._getHorizontalNeighborCase2({
-      anchor: {
-        container: container.childNodes[1],
-        offset: 0,
-      },
-      step: {
-        direction: 'left',
-        stride: 'word',
-      },
-    }).next,
-  ).toEqual({
+  const start = {
     container: container.childNodes[0],
     offset: 5,
-  });
+  }
+  const end = {
+    container: container.childNodes[1],
+    offset: 0,
+  }
+  expect(anchorToStrong(start, true)).toEqual('<div>hello|world</div>');
+  expect(anchorToStrong(end, true)).toEqual('<div>hello|world</div>');
+  const startNext = editor._getHorizontalNeighborCase2({
+    anchor: start,
+    step: {
+      direction: 'right',
+      stride: 'word',
+    },
+  }).next;
+  const endPrev = editor._getHorizontalNeighborCase2({
+    anchor: end,
+    step: {
+      direction: 'left',
+      stride: 'word',
+    },
+  }).next;
+
+  expect(
+    anchorToStrong(startNext, true),
+  ).toEqual('<div>helloworld|</div>');
+  expect(
+    anchorToStrong(endPrev, true),
+  ).toEqual('<div>|helloworld</div>');
 });
 
 test('horizontalNeighbor/case2.2', () => {

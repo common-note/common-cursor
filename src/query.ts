@@ -896,11 +896,11 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     throw new Error('Method not implemented.');
   }
 
-  _insertBefore(src: Node, target: Element): ContainerType {
+  _insertBefore(src: Node, target: Element, mergeText = true): ContainerType {
     const parent = target.parentNode;
     const prev = this._getNeighborSibling({ container: target, step: { direction: 'left', stride: 'char' } });
 
-    if (src instanceof Text && prev instanceof Text) {
+    if (src instanceof Text && prev instanceof Text && mergeText) {
         prev.textContent = (prev.textContent || "") + (src.textContent || "");
         src.remove();
         return prev;
@@ -911,11 +911,11 @@ export class AnchorQuery implements AnchorQueryInterface, QueryCallback {
     return src;
   }
 
-  _insertAfter(src: Node, target: Element): ContainerType {
+  _insertAfter(src: Node, target: Element, mergeText = true): ContainerType {
       const parent = target.parentNode;
       const next = this._getNeighborSibling({ container: target, step: { direction: 'right', stride: 'char' } });
 
-      if (src instanceof Text && next instanceof Text) {
+      if (src instanceof Text && next instanceof Text && mergeText) {
           next.textContent = (src.textContent || "") + (next.textContent || "");
           src.remove();
           return next;
